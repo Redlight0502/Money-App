@@ -11,11 +11,11 @@ body {
 ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
 
 .obsidian-card {
-    background: linear-gradient(145deg, rgba(17, 24, 39, 0.8) 0%, rgba(3, 7, 18, 0.9) 100%);
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.85) 0%, rgba(3, 7, 18, 0.95) 100%);
     backdrop-filter: blur(40px);
     -webkit-backdrop-filter: blur(40px);
     border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
 }
 
 .input-glass {
@@ -60,7 +60,7 @@ body {
     to { opacity: 0; transform: translateX(30px) scale(0.95); }
 }
 
-/* 數字滾動 (Odometer) 樣式 */
+/* Odometer 數字滾動效果 */
 .odometer-container {
     display: inline-flex;
     overflow: hidden;
