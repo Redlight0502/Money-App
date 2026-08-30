@@ -53,14 +53,6 @@
         @keyframes slideOut {
             to { opacity: 0; transform: translateX(40px) scale(0.95); }
         }
-
-        .pulse-glow {
-            animation: pulseGlow 3s infinite;
-        }
-        @keyframes pulseGlow {
-            0%, 100% { opacity: 0.4; }
-            50% { opacity: 0.8; }
-        }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-2 md:p-4">
@@ -69,7 +61,7 @@
 
     <div class="w-full max-w-md ios-glass rounded-[40px] p-5 md:p-6 flex flex-col h-[96vh] max-h-[920px] relative overflow-hidden">
         
-        <!-- iOS 頂部狀態列風格與結餘 -->
+        <!-- 頂部狀態與結餘 -->
         <div class="flex justify-between items-start mb-3">
             <div>
                 <div class="flex items-center gap-2">
@@ -128,17 +120,17 @@
             </div>
         </div>
 
-        <!-- 智慧記帳卡片 (手動 + AI 語音/文字輸入) -->
+        <!-- 智慧記帳卡片 (手動 + AI 智慧文字) -->
         <form id="ledgerForm" class="space-y-2.5 mb-3 input-glass p-3 rounded-[32px]">
             <div class="flex bg-black/40 p-1 rounded-2xl border border-white/5">
-                <button type="button" id="tabManual" class="flex-1 py-1.5 rounded-xl bg-white/15 text-white font-bold transition-all text-xs shadow">✍️ 標配記帳</button>
-                <button type="button" id="tabAi" class="flex-1 py-1.5 rounded-xl text-gray-400 font-medium transition-all text-xs">🪄 AI智慧文字</button>
+                <button type="button" id="tabManual" class="flex-1 py-1.5 rounded-xl text-gray-400 font-medium transition-all text-xs">✍️ 標配記帳</button>
+                <button type="button" id="tabAi" class="flex-1 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold transition-all text-xs shadow">🪄 AI智慧文字</button>
             </div>
 
-            <!-- AI 智慧辨識區 -->
-            <div id="aiInputContainer" class="hidden space-y-2">
+            <!-- AI 智慧辨識區 (預設開啟，體驗最好) -->
+            <div id="aiInputContainer" class="space-y-2">
                 <div class="relative">
-                    <textarea id="aiText" rows="2" placeholder="直接打字，例如：&#10;昨天 買咖啡 38 支付寶 #下午茶&#10;搭地鐵 14.5 八達通" 
+                    <textarea id="aiText" rows="2" placeholder="直接打字，例如：&#10;$15 46X去顯徑 (自動辨識交通)&#10;昨天買咖啡38 支付寶 #下午茶" 
                         class="w-full px-3 py-2 input-glass rounded-2xl text-xs text-blue-300 focus:outline-none resize-none"></textarea>
                 </div>
                 <button type="button" id="aiSubmitBtn" class="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-2xl text-xs shadow-lg shadow-blue-500/20 active:scale-98 transition">
@@ -146,8 +138,8 @@
                 </button>
             </div>
 
-            <!-- 手動表單區 (無銀行/信用卡，專注 現金、支付寶、八達通) -->
-            <div id="manualInputContainer" class="space-y-2">
+            <!-- 手動表單區 -->
+            <div id="manualInputContainer" class="hidden space-y-2">
                 <div class="flex bg-black/30 p-0.5 rounded-xl border border-white/5">
                     <button type="button" id="typeExpense" class="flex-1 py-1 rounded-lg bg-white/10 text-white font-bold transition-all text-[11px]">支出</button>
                     <button type="button" id="typeIncome" class="flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-[11px]">收入</button>
@@ -168,7 +160,6 @@
                     </select>
                 </div>
 
-                <!-- 金額快調鈕 -->
                 <div class="grid grid-cols-6 gap-1">
                     <button type="button" data-action="-50" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 active:scale-95">-50</button>
                     <button type="button" data-action="-10" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 active:scale-95">-10</button>
@@ -180,7 +171,6 @@
 
                 <div class="grid grid-cols-3 gap-2">
                     <select id="category" class="px-2 py-2 input-glass rounded-2xl text-xs font-bold text-gray-200 focus:outline-none"></select>
-                    <!-- 帳戶：無銀行/信用卡，專屬 Alipay, 現金, 八達通 -->
                     <select id="account" class="px-2 py-2 input-glass rounded-2xl text-xs font-bold text-gray-200 focus:outline-none">
                         <option value="Alipay">💙 支付寶 (Alipay)</option>
                         <option value="Cash">💵 現金 (Cash)</option>
@@ -200,7 +190,7 @@
             </div>
         </form>
 
-        <!-- 歷史紀錄清單 (iOS極簡俐落風格) -->
+        <!-- 歷史紀錄清單 -->
         <div class="flex-1 overflow-hidden flex flex-col">
             <div class="flex justify-between items-center mb-2 px-1 gap-2">
                 <div class="flex items-center gap-1.5">
@@ -225,7 +215,7 @@
         </div>
     </div>
 
-    <!-- 統計圖表 Modal (iOS 彈窗) -->
+    <!-- 統計圖表 Modal -->
     <div id="chartModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
         <div class="ios-glass w-full max-w-sm rounded-[36px] p-5 space-y-4 ios-spring shadow-2xl">
             <div class="flex justify-between items-center">
@@ -239,8 +229,8 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'obsidian_ledger_ios_alipay_data';
-        const BUDGET_KEY = 'obsidian_ledger_ios_alipay_budget';
+        const STORAGE_KEY = 'obsidian_ledger_ios_alipay_data_v2';
+        const BUDGET_KEY = 'obsidian_ledger_ios_alipay_budget_v2';
 
         const EXCHANGE_RATES = { HKD: 1.0, RMB: 1.1, USD: 7.8, JPY: 0.052, TWD: 0.25 };
 
@@ -248,10 +238,9 @@
             expenses: [],
             monthlyBudget: 10000,
 
-            // 極為豐富的收支類別 (支援各種日常生活與AI關鍵字)
             expenseCategories: [
-                { name: '餐費', icon: '🍜', keywords: ['飯', '餐', '吃', '麵', '外賣', '下午茶', '咖啡', '早餐', '晚餐', '午餐', '餐廳', '麥當勞', 'kfc'] },
-                { name: '交通', icon: '🚇', keywords: ['車', '地鐵', '巴士', '港鐵', 'mrt', 'uber', '的士', '加油', '八達通'] },
+                { name: '餐費', icon: '🍜', keywords: ['飯', '餐', '吃', '麵', '外賣', '下午茶', '咖啡', '早餐', '晚餐', '午餐', '餐廳', '麥當勞', 'kfc', '奶茶'] },
+                { name: '交通', icon: '🚇', keywords: ['車', '地鐵', '巴士', '港鐵', 'mrt', 'uber', '的士', '加油', '八達通', '去', '搭', '顯徑', '站', '46x', 'e33', 'a43'] },
                 { name: '網購', icon: '🛍️', keywords: ['淘寶', '拼多多', '網購', '支付寶', '買', '蝦皮', 'momo'] },
                 { name: '娛樂', icon: '🎮', keywords: ['電影', '遊戲', '玩', '手遊', 'netflix', 'spotify', 'ktv'] },
                 { name: '居住', icon: '🏠', keywords: ['租金', '房租', '水費', '電費', '煤氣', '管理費'] },
@@ -332,7 +321,7 @@
             render();
         });
 
-        // AI 自然語言辨識 (支援支付寶、現金、八達通)
+        // 升級版 AI 自然語言辨識引擎（解決數字、巴士編號 46X 與類別誤判問題）
         function parseAiText(text) {
             text = text.trim();
             if (!text) return null;
@@ -342,44 +331,69 @@
                 type = 'income';
             }
 
-            const numMatch = text.match(/\d+(\.\d+)?/);
-            if (!numMatch) return null;
-            const amount = parseFloat(numMatch[0]);
+            // 精確抓取金額：支援 $15 或 15蚊 或直接數字，並排除巴士編號如 46X 造成的數字混淆
+            // 我們優先找帶有 $ 符號或位於字首的金額，或者用正規式排除英文後面的數字
+            let amount = 0;
+            // 尋找 $15 或 15 這種金額
+            const matches = [...text.matchAll(/(?:\$|HK\$)?\s*(\d+(\.\d+)?)/g)];
+            if (matches.length > 0) {
+                // 如果有多个数字（例如 "$15 46X"），第一個通常是金額，除非後面有更明顯的金額標記
+                // 檢查是否含有 $ 符號緊鄰的數字
+                const dollarMatch = text.match(/\$\s*(\d+(\.\d+)?)/);
+                if (dollarMatch) {
+                    amount = parseFloat(dollarMatch[1]);
+                } else {
+                    // 取第一個合理解析的金額（過濾掉像 46 這種被英文字母夾住或明顯是編號的數字，但 46X 通常前面有空格）
+                    // 這裡預設抓取第一個數字，或者如果是 "$15 46x" 則 15 是金額
+                    amount = parseFloat(matches[0][1]);
+                }
+            }
 
+            if (!amount || isNaN(amount)) return null;
+
+            // 帳戶辨識
             let account = 'Alipay';
             if (text.includes('現金') || text.includes('現')) account = 'Cash';
-            else if (text.includes('八達通')) account = 'Octopus';
+            else if (text.includes('八達通') || text.includes('搭車') || text.includes('地鐵') || text.includes('巴士')) account = 'Octopus';
             else if (text.includes('支付寶') || text.includes('alipay')) account = 'Alipay';
 
+            // 標籤
             let tags = '';
             const tagMatch = text.match(/#\S+/g);
             if (tagMatch) tags = tagMatch.join(' ');
 
+            // 智慧分類（優先檢測交通、餐費等關鍵字）
             let category = type === 'expense' ? '餐費' : '薪金';
             const categoriesList = type === 'expense' ? LedgerStorage.expenseCategories : LedgerStorage.incomeCategories;
             
+            // 優先匹配最長或最準確的關鍵字
+            let matchedCategory = null;
             for (let cat of categoriesList) {
                 for (let kw of cat.keywords) {
-                    if (text.includes(kw)) {
-                        category = cat.name;
+                    if (text.toLowerCase().includes(kw.toLowerCase())) {
+                        matchedCategory = cat.name;
                         break;
                     }
                 }
+                if (matchedCategory) break;
             }
+            if (matchedCategory) category = matchedCategory;
 
+            // 日期辨識
             let dateObj = new Date();
             if (text.includes('昨天')) dateObj.setDate(dateObj.getDate() - 1);
             else if (text.includes('前天')) dateObj.setDate(dateObj.getDate() - 2);
             const dateStr = dateObj.toISOString().slice(0, 10);
 
-            let note = text.replace(numMatch[0], '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|支付寶|八達通|alipay|收|買)/g, '').trim();
+            // 備註清理
+            let note = text.replace(/(?:\$|HK\$)?\s*\d+(\.\d+)?/g, '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|支付寶|八達通|alipay|收|買)/g, '').trim();
             if (!note) note = category;
 
             return {
                 id: Date.now(),
                 type,
                 amount,
-                currency: text.includes('rmb') || text.includes('人') ? 'RMB' : 'HKD',
+                currency: text.toLowerCase().includes('rmb') || text.includes('人民幣') ? 'RMB' : 'HKD',
                 category,
                 account,
                 date: dateStr,
@@ -394,7 +408,6 @@
             document.getElementById('dataMenuBtn').addEventListener('click', () => document.getElementById('dataPanel').classList.toggle('hidden'));
             document.getElementById('closeDataPanel').addEventListener('click', () => document.getElementById('dataPanel').classList.add('hidden'));
 
-            // 標籤頁切換 (手動 vs AI)
             const tabManual = document.getElementById('tabManual');
             const tabAi = document.getElementById('tabAi');
             const manualContainer = document.getElementById('manualInputContainer');
@@ -421,7 +434,7 @@
                 LedgerStorage.addRecord(record);
                 document.getElementById('aiText').value = '';
                 render();
-                alert(`✨ AI 成功識別記錄：[${record.category}] $${record.amount} (${record.account})`);
+                alert(`✨ AI 成功識別記錄：[${record.category}] $${record.amount} (${record.account}) - ${record.note}`);
             });
 
             const modal = document.getElementById('chartModal');
@@ -457,7 +470,7 @@
             });
 
             document.getElementById('helpNlpBtn').addEventListener('click', () => {
-                alert('💡 AI 智慧語法提示：\n直接輸入你想記的帳，例如：\n- "昨天 買奶茶 32 支付寶 #下午茶"\n- "搭地鐵 14.5 八達通"\n- "收到薪金 16000 支付寶"\n系統會自動幫你分類並記入！');
+                alert('💡 AI 智慧語法提示：\n直接輸入你想記的帳，例如：\n- "$15 46X去顯徑" (自動識別交通與路線)\n- "昨天 買奶茶 32 支付寶 #下午茶"\n- "搭地鐵 14.5 八達通"\n- "收到薪金 16000 支付寶"');
             });
 
             document.getElementById('clearDataBtn').addEventListener('click', () => {
