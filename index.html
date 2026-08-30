@@ -2,237 +2,221 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Obsidian Ledger Ultimate MAX v2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Obsidian Ledger iOS Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
         body { 
-            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-            background-color: #030712;
-            color: #f3f4f6;
+            font-family: 'SF Pro Display', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #000000;
+            color: #f5f5f7;
             overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 4px; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 4px; }
 
-        .obsidian-card {
-            background: linear-gradient(145deg, rgba(17, 24, 39, 0.95) 0%, rgba(3, 7, 18, 0.99) 100%);
+        .ios-glass {
+            background: rgba(22, 22, 24, 0.75);
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
         }
 
         .input-glass {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .input-glass:focus-within {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(6, 182, 212, 0.4);
-            box-shadow: 0 0 15px rgba(6, 182, 212, 0.1);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(10, 132, 255, 0.6);
+            box-shadow: 0 0 20px rgba(10, 132, 255, 0.25);
         }
 
-        .spring-in { 
-            animation: springIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
+        .ios-spring { 
+            animation: iosSpring 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; 
         }
-        @keyframes springIn {
-            0% { opacity: 0; transform: translateY(10px) scale(0.98); }
-            100% { opacity: 1; transform: translateY(0) scale(1); }
+        @keyframes iosSpring {
+            0% { opacity: 0; transform: scale(0.94) translateY(12px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
         }
 
         .slide-out {
             animation: slideOut 0.25s cubic-bezier(0.4, 0, 1, 1) forwards;
         }
         @keyframes slideOut {
-            to { opacity: 0; transform: translateX(30px) scale(0.95); }
+            to { opacity: 0; transform: translateX(40px) scale(0.95); }
         }
 
-        .odometer-container {
-            display: inline-flex;
-            overflow: hidden;
-            height: 1.1em;
-            vertical-align: bottom;
+        .pulse-glow {
+            animation: pulseGlow 3s infinite;
         }
-        .odometer-digit-col {
-            display: inline-flex;
-            flex-direction: column;
-            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-        .odometer-digit {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 1.1em;
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 0.8; }
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 md:p-6">
+<body class="min-h-screen flex items-center justify-center p-2 md:p-4">
 
     <input type="file" id="importJsonInput" accept=".json" class="hidden">
 
-    <div class="w-full max-w-xl obsidian-card rounded-[36px] p-5 md:p-7 flex flex-col h-[98vh] max-h-[1020px] relative overflow-hidden">
+    <div class="w-full max-w-md ios-glass rounded-[40px] p-5 md:p-6 flex flex-col h-[96vh] max-h-[920px] relative overflow-hidden">
         
-        <!-- 頂部標題與總結餘 -->
+        <!-- iOS 頂部狀態列風格與結餘 -->
         <div class="flex justify-between items-start mb-3">
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="text-lg font-black tracking-tight text-white">OBSIDIAN</h1>
-                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-cyan-400 font-extrabold tracking-wider border border-cyan-500/30">MAX v2 AI</span>
+                    <h1 class="text-base font-bold tracking-tight text-white">Obsidian iOS</h1>
+                    <span class="text-[9px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 font-extrabold tracking-wider border border-blue-500/30">PRO MAX</span>
                 </div>
-                <div class="flex items-center gap-2 mt-1.5">
-                    <span class="flex items-center gap-1.5 px-2.5 py-0.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-full text-[10px] font-semibold">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> 本機極速快取
-                    </span>
-                    <button id="dataMenuBtn" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-full text-[10px] font-semibold transition">
-                        📂 資料中心
+                <div class="flex items-center gap-1.5 mt-1.5">
+                    <button id="dataMenuBtn" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 rounded-full text-[10px] font-semibold transition active:scale-95">
+                        ⚙️ 設定與資料
                     </button>
-                    <button id="modalChartBtn" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400 rounded-full text-[10px] font-semibold transition">
-                        📊 佔比圖表
+                    <button id="modalChartBtn" class="px-2.5 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-400 rounded-full text-[10px] font-semibold transition active:scale-95">
+                        📊 統計圖表
                     </button>
                 </div>
             </div>
             <div class="text-right">
-                <span class="text-[10px] font-extrabold text-gray-500 uppercase tracking-widest block mb-0.5">NET BALANCE</span>
-                <div id="netBalanceContainer" class="text-3xl font-black tracking-tight text-white">$0.00</div>
+                <span class="text-[9px] font-extrabold text-gray-400 uppercase tracking-widest block mb-0.5">NET BALANCE</span>
+                <div id="netBalanceContainer" class="text-2xl font-black tracking-tight text-white">$0.00</div>
             </div>
         </div>
 
-        <!-- 資料管理中心面板 -->
-        <div id="dataPanel" class="hidden mb-3 p-3 bg-black/80 border border-white/10 rounded-2xl spring-in space-y-2 z-20">
+        <!-- 數據與資料中心面板 -->
+        <div id="dataPanel" class="hidden mb-3 p-3.5 bg-black/85 border border-white/15 rounded-3xl ios-spring space-y-2.5 z-20 shadow-2xl">
             <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
-                <span>Backup & Settings</span>
-                <button id="closeDataPanel" class="text-gray-500 hover:text-white">✕</button>
+                <span>Data & Backup Hub</span>
+                <button id="closeDataPanel" class="text-gray-400 hover:text-white px-2 py-1">✕</button>
             </div>
             <div class="grid grid-cols-3 gap-1.5">
-                <button id="exportJsonBtn" class="py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-xl text-[11px] font-bold transition">💾 匯出JSON</button>
-                <button id="exportCsvBtn" class="py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-xl text-[11px] font-bold transition">📊 匯出CSV</button>
-                <button id="importJsonBtn" class="py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-emerald-400 rounded-xl text-[11px] font-bold transition">📥 匯入備份</button>
-                <button id="budgetSettingBtn" class="py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 text-cyan-400 rounded-xl text-[11px] font-bold transition">🎯 設定月預算</button>
-                <button id="helpNlpBtn" class="py-1.5 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-xl text-[11px] font-bold transition">💡 AI語法說明</button>
-                <button id="clearDataBtn" class="py-1.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-xl text-[11px] font-bold transition">🗑️ 清空所有</button>
+                <button id="exportJsonBtn" class="py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-2xl text-[11px] font-bold transition">💾 備份JSON</button>
+                <button id="exportCsvBtn" class="py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-2xl text-[11px] font-bold transition">📊 匯出CSV</button>
+                <button id="importJsonBtn" class="py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-emerald-400 rounded-2xl text-[11px] font-bold transition">📥 還原備份</button>
+                <button id="budgetSettingBtn" class="py-2 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 text-blue-400 rounded-2xl text-[11px] font-bold transition">🎯 預算設定</button>
+                <button id="helpNlpBtn" class="py-2 bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/20 text-purple-400 rounded-2xl text-[11px] font-bold transition">🪄 AI語法教學</button>
+                <button id="clearDataBtn" class="py-2 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 rounded-2xl text-[11px] font-bold transition">🗑️ 清空重置</button>
             </div>
         </div>
 
-        <!-- 預算進度與當月收支 -->
-        <div class="mb-3 p-3 bg-white/[0.02] border border-white/[0.04] rounded-2xl space-y-2">
+        <!-- 預算進度與本月收支 -->
+        <div class="mb-3 p-3 bg-white/[0.03] border border-white/[0.06] rounded-3xl space-y-2">
             <div class="flex justify-between items-center text-xs">
-                <span class="text-gray-400 font-bold">本月預算控管: <span id="budgetStatusText" class="text-white font-extrabold">$0 / $10,000</span></span>
-                <span id="budgetPercentage" class="text-emerald-400 font-extrabold">0%</span>
+                <span class="text-gray-400 font-semibold">本月預算: <span id="budgetStatusText" class="text-white font-bold">$0 / $10,000</span></span>
+                <span id="budgetPercentage" class="text-emerald-400 font-bold">0%</span>
             </div>
-            <div class="w-full bg-white/5 h-2 rounded-full overflow-hidden">
-                <div id="budgetProgressBar" class="bg-gradient-to-r from-emerald-400 to-cyan-400 h-full w-0 transition-all duration-500"></div>
+            <div class="w-full bg-white/10 h-2 rounded-full overflow-hidden">
+                <div id="budgetProgressBar" class="bg-gradient-to-r from-blue-500 to-emerald-400 h-full w-0 transition-all duration-700"></div>
             </div>
             <div class="grid grid-cols-2 gap-2 pt-1 border-t border-white/5">
                 <div>
-                    <span class="text-[9px] font-bold text-gray-500 block">本月收入</span>
-                    <span id="monthIncome" class="text-xs font-extrabold text-emerald-400">$0.00</span>
+                    <span class="text-[9px] font-semibold text-gray-400 block">本月總收入</span>
+                    <span id="monthIncome" class="text-xs font-bold text-emerald-400">$0.00</span>
                 </div>
                 <div>
-                    <span class="text-[9px] font-bold text-gray-500 block">本月支出</span>
-                    <span id="monthExpense" class="text-xs font-extrabold text-rose-400">$0.00</span>
+                    <span class="text-[9px] font-semibold text-gray-400 block">本月總支出</span>
+                    <span id="monthExpense" class="text-xs font-bold text-rose-400">$0.00</span>
                 </div>
             </div>
         </div>
 
-        <!-- 記帳與 AI 智慧輸入卡片 -->
-        <form id="ledgerForm" class="space-y-2.5 mb-3 input-glass p-3 rounded-[24px]">
-            <!-- 模式切換：手動 / AI文字辨識 -->
-            <div class="flex justify-between items-center bg-black/40 p-1 rounded-xl border border-white/5">
-                <div class="flex gap-1 flex-1">
-                    <button type="button" id="tabManual" class="flex-1 py-1 rounded-lg bg-white/10 text-white font-bold transition-all text-xs">✍️ 手動輸入</button>
-                    <button type="button" id="tabAi" class="flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-xs">✨ AI文字記帳</button>
-                </div>
+        <!-- 智慧記帳卡片 (手動 + AI 語音/文字輸入) -->
+        <form id="ledgerForm" class="space-y-2.5 mb-3 input-glass p-3 rounded-[32px]">
+            <div class="flex bg-black/40 p-1 rounded-2xl border border-white/5">
+                <button type="button" id="tabManual" class="flex-1 py-1.5 rounded-xl bg-white/15 text-white font-bold transition-all text-xs shadow">✍️ 標配記帳</button>
+                <button type="button" id="tabAi" class="flex-1 py-1.5 rounded-xl text-gray-400 font-medium transition-all text-xs">🪄 AI智慧文字</button>
             </div>
 
-            <!-- AI 智慧辨識輸入框 (預設隱藏) -->
+            <!-- AI 智慧辨識區 -->
             <div id="aiInputContainer" class="hidden space-y-2">
                 <div class="relative">
-                    <textarea id="aiText" rows="2" placeholder="例如: 昨天 買午餐 55 八達通 #美食&#10;或: 收到薪金 18000 銀行" 
-                        class="w-full px-3 py-2 input-glass rounded-xl text-xs text-cyan-300 focus:outline-none resize-none"></textarea>
+                    <textarea id="aiText" rows="2" placeholder="直接打字，例如：&#10;昨天 買咖啡 38 支付寶 #下午茶&#10;搭地鐵 14.5 八達通" 
+                        class="w-full px-3 py-2 input-glass rounded-2xl text-xs text-blue-300 focus:outline-none resize-none"></textarea>
                 </div>
-                <button type="button" id="aiSubmitBtn" class="w-full py-2 bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-cyan-500/20 hover:opacity-90 transition">
-                    🪄 AI 自動解析並記錄
+                <button type="button" id="aiSubmitBtn" class="w-full py-2.5 bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold rounded-2xl text-xs shadow-lg shadow-blue-500/20 active:scale-98 transition">
+                    🪄 AI 一鍵識別並記帳
                 </button>
             </div>
 
-            <!-- 手動表單區域 -->
+            <!-- 手動表單區 (無銀行/信用卡，專注 現金、支付寶、八達通) -->
             <div id="manualInputContainer" class="space-y-2">
-                <div class="flex bg-black/30 p-0.5 rounded-lg border border-white/5">
-                    <button type="button" id="typeExpense" class="flex-1 py-1 rounded-md bg-white/10 text-white font-bold transition-all text-[11px]">支出</button>
-                    <button type="button" id="typeIncome" class="flex-1 py-1 rounded-md text-gray-400 font-medium transition-all text-[11px]">收入</button>
+                <div class="flex bg-black/30 p-0.5 rounded-xl border border-white/5">
+                    <button type="button" id="typeExpense" class="flex-1 py-1 rounded-lg bg-white/10 text-white font-bold transition-all text-[11px]">支出</button>
+                    <button type="button" id="typeIncome" class="flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-[11px]">收入</button>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2">
-                    <div class="col-span-2 relative input-glass rounded-xl overflow-hidden">
-                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <div class="col-span-2 relative input-glass rounded-2xl overflow-hidden">
+                        <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
                         <input type="number" id="amount" step="0.01" placeholder="0.00" 
-                            class="w-full pl-7 pr-3 py-1.5 bg-transparent text-white text-lg font-black focus:outline-none">
+                            class="w-full pl-7 pr-3 py-2 bg-transparent text-white text-lg font-black focus:outline-none">
                     </div>
-                    <select id="currency" class="px-2 py-1.5 input-glass rounded-xl text-xs font-bold text-cyan-400 focus:outline-none">
+                    <select id="currency" class="px-2 py-2 input-glass rounded-2xl text-xs font-bold text-blue-400 focus:outline-none">
                         <option value="HKD">🇭🇰 HKD</option>
+                        <option value="RMB">🇨🇳 RMB</option>
                         <option value="USD">🇺🇸 USD</option>
                         <option value="JPY">🇯🇵 JPY</option>
-                        <option value="EUR">🇪🇺 EUR</option>
                         <option value="TWD">🇹🇼 TWD</option>
                     </select>
                 </div>
 
-                <!-- 智慧微調快捷列 -->
+                <!-- 金額快調鈕 -->
                 <div class="grid grid-cols-6 gap-1">
-                    <button type="button" data-action="-50" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] font-bold text-rose-400">-50</button>
-                    <button type="button" data-action="-10" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[10px] font-bold text-rose-400">-10</button>
-                    <button type="button" data-action="+10" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400">+10</button>
-                    <button type="button" data-action="+50" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400">+50</button>
-                    <button type="button" data-action="+100" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400">+100</button>
-                    <button type="button" data-action="+500" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[10px] font-bold text-emerald-400">+500</button>
+                    <button type="button" data-action="-50" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 active:scale-95">-50</button>
+                    <button type="button" data-action="-10" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 rounded-xl text-[10px] font-bold text-rose-400 active:scale-95">-10</button>
+                    <button type="button" data-action="+10" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-400 active:scale-95">+10</button>
+                    <button type="button" data-action="+50" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-400 active:scale-95">+50</button>
+                    <button type="button" data-action="+100" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-400 active:scale-95">+100</button>
+                    <button type="button" data-action="+500" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-[10px] font-bold text-emerald-400 active:scale-95">+500</button>
                 </div>
 
                 <div class="grid grid-cols-3 gap-2">
-                    <select id="category" class="px-2 py-1.5 input-glass rounded-xl text-xs font-bold text-gray-200 focus:outline-none"></select>
-                    <select id="account" class="px-2 py-1.5 input-glass rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
-                        <option value="Cash">💵 現金</option>
-                        <option value="Octopus">🚇 八達通</option>
-                        <option value="CreditCard">💳 信用卡</option>
-                        <option value="Bank">🏦 銀行戶口</option>
+                    <select id="category" class="px-2 py-2 input-glass rounded-2xl text-xs font-bold text-gray-200 focus:outline-none"></select>
+                    <!-- 帳戶：無銀行/信用卡，專屬 Alipay, 現金, 八達通 -->
+                    <select id="account" class="px-2 py-2 input-glass rounded-2xl text-xs font-bold text-gray-200 focus:outline-none">
+                        <option value="Alipay">💙 支付寶 (Alipay)</option>
+                        <option value="Cash">💵 現金 (Cash)</option>
+                        <option value="Octopus">🚇 八達通 (Octopus)</option>
                     </select>
-                    <input type="date" id="date" required class="px-2 py-1.5 input-glass rounded-xl text-[11px] font-bold text-gray-200 focus:outline-none">
+                    <input type="date" id="date" required class="px-2 py-2 input-glass rounded-2xl text-[11px] font-bold text-gray-200 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
-                    <input type="text" id="note" placeholder="備註 (例如: 晚餐, 咖啡)" class="px-3 py-1.5 input-glass rounded-xl text-xs text-gray-200 focus:outline-none">
-                    <input type="text" id="tags" placeholder="標籤 (例如: #聚餐 #網購)" class="px-3 py-1.5 input-glass rounded-xl text-xs text-cyan-300 focus:outline-none">
+                    <input type="text" id="note" placeholder="備註 (例: 晚餐, 奶茶)" class="px-3 py-2 input-glass rounded-2xl text-xs text-gray-200 focus:outline-none">
+                    <input type="text" id="tags" placeholder="標籤 (例: #美食 #網購)" class="px-3 py-2 input-glass rounded-2xl text-xs text-blue-300 focus:outline-none">
                 </div>
 
-                <button type="submit" id="submitBtn" class="w-full py-2 bg-gradient-to-r from-gray-100 to-gray-300 text-gray-900 font-extrabold rounded-xl transition hover:opacity-90 text-xs shadow-md">
+                <button type="submit" id="submitBtn" class="w-full py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl transition hover:opacity-90 active:scale-98 text-xs shadow-lg shadow-blue-500/25">
                     確認記錄支出
                 </button>
             </div>
         </form>
 
-        <!-- 歷史明細清單與過濾列 (更清晰、乾淨的設計) -->
+        <!-- 歷史紀錄清單 (iOS極簡俐落風格) -->
         <div class="flex-1 overflow-hidden flex flex-col">
             <div class="flex justify-between items-center mb-2 px-1 gap-2">
                 <div class="flex items-center gap-1.5">
-                    <h2 class="text-[10px] font-black text-gray-500 uppercase tracking-widest">TRANSACTIONS</h2>
-                    <select id="filterAccount" class="bg-white/[0.04] border border-white/10 rounded-lg text-[10px] text-gray-300 px-1.5 py-0.5 focus:outline-none">
+                    <h2 class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">TRANSACTIONS</h2>
+                    <select id="filterAccount" class="bg-white/5 border border-white/10 rounded-xl text-[10px] text-gray-300 px-2 py-1 focus:outline-none">
                         <option value="ALL">全部帳戶</option>
+                        <option value="Alipay">支付寶</option>
                         <option value="Cash">現金</option>
                         <option value="Octopus">八達通</option>
-                        <option value="CreditCard">信用卡</option>
-                        <option value="Bank">銀行</option>
                     </select>
                 </div>
-                <div class="relative flex-1 max-w-[150px]">
-                    <input type="text" id="searchInput" placeholder="搜尋記錄..." 
-                        class="w-full px-2.5 py-0.5 bg-white/[0.03] border border-white/10 rounded-full text-[10px] text-gray-300 focus:outline-none">
+                <div class="relative flex-1 max-w-[140px]">
+                    <input type="text" id="searchInput" placeholder="搜尋紀錄..." 
+                        class="w-full px-2.5 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-gray-300 focus:outline-none">
                 </div>
-                <span id="recordCount" class="text-[10px] text-gray-500 font-bold shrink-0">0 筆</span>
+                <span id="recordCount" class="text-[10px] text-gray-400 font-bold shrink-0">0 筆</span>
             </div>
             
             <div id="recordList" class="flex-1 overflow-y-auto space-y-2 pr-1">
@@ -241,48 +225,48 @@
         </div>
     </div>
 
-    <!-- 圖表分析 Modal -->
+    <!-- 統計圖表 Modal (iOS 彈窗) -->
     <div id="chartModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-        <div class="obsidian-card w-full max-w-md rounded-3xl p-5 space-y-4 spring-in">
+        <div class="ios-glass w-full max-w-sm rounded-[36px] p-5 space-y-4 ios-spring shadow-2xl">
             <div class="flex justify-between items-center">
-                <h3 class="text-sm font-black text-white uppercase tracking-wider">📊 本月類別消費佔比</h3>
-                <button id="closeChartModal" class="text-gray-400 hover:text-white text-sm">✕</button>
+                <h3 class="text-sm font-bold text-white uppercase tracking-wider">📊 支出類別佔比分析</h3>
+                <button id="closeChartModal" class="text-gray-400 hover:text-white text-base px-2 py-1">✕</button>
             </div>
-            <div class="relative h-64 flex items-center justify-center">
+            <div class="relative h-60 flex items-center justify-center">
                 <canvas id="categoryChart"></canvas>
             </div>
         </div>
     </div>
 
     <script>
-        const STORAGE_KEY = 'obsidian_ledger_max_v2_data';
-        const BUDGET_KEY = 'obsidian_ledger_max_v2_budget';
+        const STORAGE_KEY = 'obsidian_ledger_ios_alipay_data';
+        const BUDGET_KEY = 'obsidian_ledger_ios_alipay_budget';
 
-        const EXCHANGE_RATES = { HKD: 1.0, USD: 7.8, JPY: 0.052, EUR: 8.5, TWD: 0.25 };
+        const EXCHANGE_RATES = { HKD: 1.0, RMB: 1.1, USD: 7.8, JPY: 0.052, TWD: 0.25 };
 
         const LedgerStorage = {
             expenses: [],
             monthlyBudget: 10000,
 
-            // 更豐富的收支類別 (含圖示與關鍵字供AI辨識)
+            // 極為豐富的收支類別 (支援各種日常生活與AI關鍵字)
             expenseCategories: [
                 { name: '餐費', icon: '🍜', keywords: ['飯', '餐', '吃', '麵', '外賣', '下午茶', '咖啡', '早餐', '晚餐', '午餐', '餐廳', '麥當勞', 'kfc'] },
-                { name: '交通', icon: '🚇', keywords: ['車', '地鐵', '巴士', '港鐵', 'mrt', 'uber', '的士', '加油', '停車', '八達通'] },
-                { name: '購物', icon: '🛍️', keywords: ['買', '網購', '蝦皮', 'momo', '超市', '百佳', '惠康', '衣服', '鞋', '商場'] },
-                { name: '娛樂', icon: '🎮', keywords: ['電影', '遊戲', '玩', '手遊', 'netflix', 'spotify', 'ktv', '演唱會'] },
-                { name: '居住', icon: '🏠', keywords: ['租金', '房租', '水費', '電費', '煤氣', '管理費', '傢俬'] },
-                { name: '醫療', icon: '💊', keywords: ['醫生', '藥', '看病', '牙醫', '醫院', '保健'] },
+                { name: '交通', icon: '🚇', keywords: ['車', '地鐵', '巴士', '港鐵', 'mrt', 'uber', '的士', '加油', '八達通'] },
+                { name: '網購', icon: '🛍️', keywords: ['淘寶', '拼多多', '網購', '支付寶', '買', '蝦皮', 'momo'] },
+                { name: '娛樂', icon: '🎮', keywords: ['電影', '遊戲', '玩', '手遊', 'netflix', 'spotify', 'ktv'] },
+                { name: '居住', icon: '🏠', keywords: ['租金', '房租', '水費', '電費', '煤氣', '管理費'] },
+                { name: '醫療', icon: '💊', keywords: ['醫生', '藥', '看病', '牙醫', '醫院'] },
                 { name: '訂閱', icon: '📱', keywords: ['訂閱', 'icloud', 'google', 'gpt', '月費'] },
                 { name: '健身', icon: '💪', keywords: ['健身', 'gym', '運動', '瑜伽'] },
-                { name: '寵物', icon: '🐱', keywords: ['貓', '狗', '寵物糧', '獸醫'] },
-                { name: '教育', icon: '📚', keywords: ['書', '課程', '學費', '考試'] },
+                { name: '寵物', icon: '🐱', keywords: ['貓', '狗', '寵物', '獸醫'] },
+                { name: '教育', icon: '📚', keywords: ['書', '課程', '學費'] },
                 { name: '其他', icon: '📦', keywords: [] }
             ],
             incomeCategories: [
                 { name: '薪金', icon: '💰', keywords: ['薪金', '薪水', '人工', '月薪', '公司'] },
-                { name: '投資', icon: '📈', keywords: ['股票', '股息', '投資', '利息', '分紅'] },
-                { name: '獎金', icon: '🏆', keywords: ['獎金', '年終', '紅利'] },
-                { name: '兼職', icon: '💻', keywords: ['兼職', '外快', 'freelance', '稿費'] },
+                { name: '轉帳/收款', icon: '💙', keywords: ['支付寶轉帳', '轉帳', '收款', '紅包'] },
+                { name: '投資', icon: '📈', keywords: ['股票', '股息', '投資', '利息'] },
+                { name: '兼職', icon: '💻', keywords: ['兼職', '外快', 'freelance'] },
                 { name: '其他', icon: '✨', keywords: [] }
             ],
 
@@ -348,34 +332,29 @@
             render();
         });
 
-        // 智慧文字辨識 (NLP Parser)
+        // AI 自然語言辨識 (支援支付寶、現金、八達通)
         function parseAiText(text) {
             text = text.trim();
             if (!text) return null;
 
             let type = 'expense';
-            if (text.includes('收') || text.includes('人工') || text.includes('薪金') || text.includes('收入') || text.includes('賺')) {
+            if (text.includes('收') || text.includes('人工') || text.includes('薪金') || text.includes('收入') || text.includes('紅包')) {
                 type = 'income';
             }
 
-            // 提取金額 (數字)
             const numMatch = text.match(/\d+(\.\d+)?/);
             if (!numMatch) return null;
             const amount = parseFloat(numMatch[0]);
 
-            // 提取帳戶
-            let account = 'Cash';
-            if (text.includes('八達通')) account = 'Octopus';
-            else if (text.includes('信用卡') || text.includes('卡')) account = 'CreditCard';
-            else if (text.includes('銀行') || text.includes('戶口') || text.includes('網銀')) account = 'Bank';
-            else if (text.includes('現')) account = 'Cash';
+            let account = 'Alipay';
+            if (text.includes('現金') || text.includes('現')) account = 'Cash';
+            else if (text.includes('八達通')) account = 'Octopus';
+            else if (text.includes('支付寶') || text.includes('alipay')) account = 'Alipay';
 
-            // 提取標籤 (#)
             let tags = '';
             const tagMatch = text.match(/#\S+/g);
             if (tagMatch) tags = tagMatch.join(' ');
 
-            // 提取類別
             let category = type === 'expense' ? '餐費' : '薪金';
             const categoriesList = type === 'expense' ? LedgerStorage.expenseCategories : LedgerStorage.incomeCategories;
             
@@ -388,24 +367,19 @@
                 }
             }
 
-            // 日期處理 (支援 "昨天", "今天")
             let dateObj = new Date();
-            if (text.includes('昨天')) {
-                dateObj.setDate(dateObj.getDate() - 1);
-            } else if (text.includes('前天')) {
-                dateObj.setDate(dateObj.getDate() - 2);
-            }
+            if (text.includes('昨天')) dateObj.setDate(dateObj.getDate() - 1);
+            else if (text.includes('前天')) dateObj.setDate(dateObj.getDate() - 2);
             const dateStr = dateObj.toISOString().slice(0, 10);
 
-            // 移除特殊符號後的純備註
-            let note = text.replace(numMatch[0], '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|八達通|信用卡|銀行|收|買)/g, '').trim();
+            let note = text.replace(numMatch[0], '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|支付寶|八達通|alipay|收|買)/g, '').trim();
             if (!note) note = category;
 
             return {
                 id: Date.now(),
                 type,
                 amount,
-                currency: 'HKD',
+                currency: text.includes('rmb') || text.includes('人') ? 'RMB' : 'HKD',
                 category,
                 account,
                 date: dateStr,
@@ -417,7 +391,6 @@
         function setupEvents() {
             const importInput = document.getElementById('importJsonInput');
 
-            // 面板切換
             document.getElementById('dataMenuBtn').addEventListener('click', () => document.getElementById('dataPanel').classList.toggle('hidden'));
             document.getElementById('closeDataPanel').addEventListener('click', () => document.getElementById('dataPanel').classList.add('hidden'));
 
@@ -428,39 +401,33 @@
             const aiContainer = document.getElementById('aiInputContainer');
 
             tabManual.addEventListener('click', () => {
-                tabManual.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold transition-all text-xs";
-                tabAi.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-xs";
+                tabManual.className = "flex-1 py-1.5 rounded-xl bg-white/15 text-white font-bold transition-all text-xs shadow";
+                tabAi.className = "flex-1 py-1.5 rounded-xl text-gray-400 font-medium transition-all text-xs";
                 manualContainer.classList.remove('hidden');
                 aiContainer.classList.add('hidden');
             });
 
             tabAi.addEventListener('click', () => {
-                tabAi.className = "flex-1 py-1 rounded-lg bg-cyan-500 text-white font-bold shadow-lg shadow-cyan-500/20 transition-all text-xs";
-                tabManual.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-xs";
+                tabAi.className = "flex-1 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold shadow-md transition-all text-xs";
+                tabManual.className = "flex-1 py-1.5 rounded-xl text-gray-400 font-medium transition-all text-xs";
                 aiContainer.classList.remove('hidden');
                 manualContainer.classList.add('hidden');
             });
 
-            // AI 提交
             document.getElementById('aiSubmitBtn').addEventListener('click', () => {
                 const textVal = document.getElementById('aiText').value;
                 const record = parseAiText(textVal);
-                if (!record) {
-                    alert('無法辨識金額或內容，請重新輸入！');
-                    return;
-                }
+                if (!record) { alert('無法辨識金額，請重新輸入！'); return; }
                 LedgerStorage.addRecord(record);
                 document.getElementById('aiText').value = '';
                 render();
-                alert(`✨ AI 成功記錄：[${record.category}] $${record.amount} (${record.account})`);
+                alert(`✨ AI 成功識別記錄：[${record.category}] $${record.amount} (${record.account})`);
             });
 
-            // 圖表 Modal
             const modal = document.getElementById('chartModal');
             document.getElementById('modalChartBtn').addEventListener('click', () => { modal.classList.remove('hidden'); renderCategoryChart(); });
             document.getElementById('closeChartModal').addEventListener('click', () => modal.classList.add('hidden'));
 
-            // 匯出 / 匯入
             document.getElementById('exportJsonBtn').addEventListener('click', () => {
                 const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(LedgerStorage.expenses, null, 2));
                 const dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", `obsidian_ledger_${new Date().toISOString().slice(0,10)}.json`);
@@ -478,10 +445,7 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        try {
-                            LedgerStorage.expenses = JSON.parse(ev.target.result);
-                            LedgerStorage.save(); render(); alert('成功匯入！');
-                        } catch(err) { alert('格式錯誤'); }
+                        try { LedgerStorage.expenses = JSON.parse(ev.target.result); LedgerStorage.save(); render(); alert('還原成功！'); } catch(err) { alert('檔案格式錯誤'); }
                     };
                     reader.readAsText(file);
                 }
@@ -493,14 +457,13 @@
             });
 
             document.getElementById('helpNlpBtn').addEventListener('click', () => {
-                alert('AI 語法小提示：\n直接輸入自然語句，例如：\n- "昨天 買咖啡 38 現金 #下午茶"\n- "搭地鐵 14.5 八達通"\n- "收到兼職薪金 2500 銀行"\n系統會自動分類與記錄！');
+                alert('💡 AI 智慧語法提示：\n直接輸入你想記的帳，例如：\n- "昨天 買奶茶 32 支付寶 #下午茶"\n- "搭地鐵 14.5 八達通"\n- "收到薪金 16000 支付寶"\n系統會自動幫你分類並記入！');
             });
 
             document.getElementById('clearDataBtn').addEventListener('click', () => {
-                if (confirm('確定要清空所有資料嗎？')) { LedgerStorage.clearAll(); render(); }
+                if (confirm('確定要清空所有紀錄嗎？')) { LedgerStorage.clearAll(); render(); }
             });
 
-            // 搜尋與篩選
             document.getElementById('searchInput').addEventListener('input', (e) => { searchQuery = e.target.value.toLowerCase().trim(); render(); });
             document.getElementById('filterAccount').addEventListener('change', (e) => { currentAccountFilter = e.target.value; render(); });
 
@@ -549,14 +512,14 @@
             updateCategories();
 
             if (type === 'expense') {
-                exp.className = "flex-1 py-1 rounded-md bg-white/10 text-white font-bold transition-all text-[11px]";
-                inc.className = "flex-1 py-1 rounded-md text-gray-400 font-medium transition-all text-[11px]";
-                submit.className = "w-full py-2 bg-gradient-to-r from-gray-100 to-gray-300 text-gray-900 font-extrabold rounded-xl transition hover:opacity-90 text-xs shadow-md";
+                exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold transition-all text-[11px]";
+                inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-[11px]";
+                submit.className = "w-full py-2.5 bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold rounded-2xl transition hover:opacity-90 active:scale-98 text-xs shadow-lg shadow-blue-500/25";
                 submit.textContent = "確認記錄支出";
             } else {
-                inc.className = "flex-1 py-1 rounded-md bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all text-[11px]";
-                exp.className = "flex-1 py-1 rounded-md text-gray-400 font-medium transition-all text-[11px]";
-                submit.className = "w-full py-2 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-extrabold rounded-xl transition hover:opacity-90 text-xs shadow-lg shadow-emerald-500/20";
+                inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-500/20 transition-all text-[11px]";
+                exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium transition-all text-[11px]";
+                submit.className = "w-full py-2.5 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-bold rounded-2xl transition hover:opacity-90 active:scale-98 text-xs shadow-lg shadow-emerald-500/20";
                 submit.textContent = "確認記錄收入";
             }
         }
@@ -573,13 +536,12 @@
             });
         }
 
-        function getAccountIcon(acc) {
+        function getAccountDetails(acc) {
             switch(acc) {
-                case 'Cash': return '💵 現金';
-                case 'Octopus': return '🚇 八達通';
-                case 'CreditCard': return '💳 信用卡';
-                case 'Bank': return '🏦 銀行';
-                default: return acc;
+                case 'Alipay': return { name: '支付寶', icon: '💙', color: 'text-blue-400' };
+                case 'Cash': return { name: '現金', icon: '💵', color: 'text-emerald-400' };
+                case 'Octopus': return { name: '八達通', icon: '🚇', color: 'text-amber-400' };
+                default: return { name: acc, icon: '💳', color: 'text-gray-300' };
             }
         }
 
@@ -604,7 +566,7 @@
             document.getElementById('budgetPercentage').textContent = `${percent}%`;
             const bar = document.getElementById('budgetProgressBar');
             bar.style.width = `${percent}%`;
-            bar.className = `h-full transition-all duration-500 ${percent > 90 ? 'bg-rose-500' : percent > 75 ? 'bg-amber-400' : 'bg-gradient-to-r from-emerald-400 to-cyan-400'}`;
+            bar.className = `h-full transition-all duration-700 ${percent > 90 ? 'bg-rose-500' : percent > 75 ? 'bg-amber-400' : 'bg-gradient-to-r from-blue-500 to-emerald-400'}`;
 
             let items = LedgerStorage.expenses;
             if (currentAccountFilter !== 'ALL') items = items.filter(i => i.account === currentAccountFilter);
@@ -621,31 +583,31 @@
             listEl.innerHTML = '';
 
             if (items.length === 0) {
-                listEl.innerHTML = `<div class="text-center text-gray-500 text-xs py-12">✨ 沒有找到符合的交易紀錄</div>`;
+                listEl.innerHTML = `<div class="text-center text-gray-500 text-xs py-12">✨ 尚無符合的記帳紀錄</div>`;
             }
 
-            // 更乾淨清晰的卡片佈局
             items.forEach((item, idx) => {
                 const isInc = item.type === 'income';
                 const div = document.createElement('div');
-                div.className = "spring-in flex items-center justify-between p-3 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.05] rounded-2xl transition group shadow-sm";
-                div.style.animationDelay = `${Math.min(idx * 0.02, 0.2)}s`;
+                div.className = "ios-spring flex items-center justify-between p-3 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-2xl transition group shadow-sm";
+                div.style.animationDelay = `${Math.min(idx * 0.02, 0.25)}s`;
 
                 const icon = getCategoryIcon(item.category);
+                const accInfo = getAccountDetails(item.account);
 
                 div.innerHTML = `
                     <div class="flex items-center gap-3">
-                        <div class="w-9 h-9 rounded-2xl flex items-center justify-center text-sm bg-white/5 border border-white/10 shrink-0">
+                        <div class="w-10 h-10 rounded-2xl flex items-center justify-center text-base bg-white/5 border border-white/10 shrink-0">
                             ${icon}
                         </div>
                         <div>
-                            <div class="font-extrabold text-gray-100 text-xs flex items-center gap-2">
+                            <div class="font-bold text-gray-100 text-xs flex items-center gap-2">
                                 ${item.category}
-                                <span class="text-[9px] px-2 py-0.5 bg-white/5 border border-white/5 rounded-full text-cyan-400 font-semibold">${getAccountIcon(item.account)}</span>
+                                <span class="text-[9px] px-2 py-0.5 bg-white/5 border border-white/10 rounded-full ${accInfo.color} font-semibold">${accInfo.icon} ${accInfo.name}</span>
                             </div>
                             <div class="text-[11px] text-gray-400 mt-0.5 flex items-center gap-2">
-                                <span class="text-gray-300 font-medium">${item.note || '無備註'}</span>
-                                ${item.tags ? `<span class="text-cyan-300 font-semibold">${item.tags}</span>` : ''}
+                                <span class="text-gray-300">${item.note || '無備註'}</span>
+                                ${item.tags ? `<span class="text-blue-400 font-medium">${item.tags}</span>` : ''}
                                 <span class="text-[9px] text-gray-500">${item.date}</span>
                             </div>
                         </div>
@@ -657,7 +619,7 @@
                             </span>
                             ${item.currency !== 'HKD' ? `<span class="block text-[9px] text-gray-500">(${item.currency} ${item.amount})</span>` : ''}
                         </div>
-                        <button data-id="${item.id}" class="del-btn text-gray-600 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1.5 rounded-lg hover:bg-white/5">✕</button>
+                        <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-1.5 rounded-lg hover:bg-white/5">✕</button>
                     </div>
                 `;
 
@@ -672,7 +634,7 @@
             const balance = LedgerStorage.expenses.reduce((acc, item) => item.type === 'income' ? acc + item.hkdAmount : acc - item.hkdAmount, 0);
             balanceContainer.innerHTML = '';
             balanceContainer.textContent = (balance >= 0 ? '$' : '-$') + Math.abs(balance).toFixed(2);
-            balanceContainer.className = `text-3xl font-black tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
+            balanceContainer.className = `text-2xl font-black tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
         }
 
         function renderCategoryChart() {
@@ -696,7 +658,7 @@
                     labels: labels.length ? labels : ['無消費記錄'],
                     datasets: [{
                         data: data.length ? data : [1],
-                        backgroundColor: ['#34d399', '#06b6d4', '#60a5fa', '#a78bfa', '#f472b6', '#fbbf24', '#f87171', '#38bdf8', '#c084fc', '#fb923c'],
+                        backgroundColor: ['#0a84ff', '#34c759', '#ff9f0a', '#ff453a', '#bf5af2', '#64d2ff', '#5856d6', '#ff375f', '#ac8e68', '#8e8e93'],
                         borderWidth: 0
                     }]
                 },
@@ -704,7 +666,7 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { position: 'bottom', labels: { color: '#9ca3af', font: { size: 10 } } }
+                        legend: { position: 'bottom', labels: { color: '#98989f', font: { size: 10 } } }
                     }
                 }
             });
