@@ -1,7 +1,10 @@
+// storage.js
+const STORAGE_KEY = 'obsidian_ledger_pro_data';
+
 export const LedgerStorage = {
     expenses: [],
-    isFileLoaded: false,
-    fileName: '',
+    isFileLoaded: true, // 預設直接為 true，透過 localStorage 免重複 attach
+    fileName: 'local_storage_cache.json',
     fileHandle: null,
 
     expenseCategories: [
@@ -21,6 +24,28 @@ export const LedgerStorage = {
         { name: '其他', icon: '✨' }
     ],
 
+    // 初始化載入：優先從 localStorage 讀取快取，免除每次 Attach
+    init() {
+        try {
+            const cached = localStorage.getItem(STORAGE_KEY);
+            if (cached) {
+                this.expenses = JSON.parse(cached);
+            }
+        } catch (e) {
+            console.error('讀取本機快取失敗', e);
+        }
+    },
+
+    // 儲存至 localStorage 與自動同步
+    save() {
+        try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.expenses));
+        } catch (e) {
+            console.error('寫入本機快取失敗', e);
+        }
+    },
+
+    // 選擇外部檔案掛載 (可選)
     async connectFile(fileInputEl, callback) {
         if ('showOpenFilePicker' in window) {
             try {
@@ -31,12 +56,12 @@ export const LedgerStorage = {
                 const file = await this.fileHandle.getFile();
                 const text = await file.text();
                 this.expenses = JSON.parse(text);
-                this.isFileLoaded = true;
                 this.fileName = file.name;
+                this.save();
                 if (callback) callback(true, file.name);
                 return;
             } catch (err) {
-                console.log('使用者取消或不支援 API');
+                console.log('使用者取消檔案掛載');
             }
         }
         fileInputEl.click();
@@ -50,8 +75,8 @@ export const LedgerStorage = {
                 const data = JSON.parse(e.target.result);
                 if (!Array.isArray(data)) throw new Error();
                 this.expenses = data;
-                this.isFileLoaded = true;
                 this.fileName = file.name;
+                this.save();
                 if (callback) callback(true, file.name);
             } catch (err) {
                 if (callback) callback(false, '格式錯誤');
@@ -60,21 +85,28 @@ export const LedgerStorage = {
         reader.readAsText(file);
     },
 
-    async saveToFile() {
-        if (this.fileHandle) {
-            try {
-                const writable = await this.fileHandle.createWritable();
-                await writable.write(JSON.stringify(this.expenses, null, 2));
-                await writable.close();
-                return;
-            } catch (err) {
-                console.error('自動存檔失敗', err);
-            }
-        }
+    // 匯出 JSON 備份檔案
+    exportJson() {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.expenses, null, 2));
         const dlAnchor = document.createElement('a');
         dlAnchor.setAttribute("href", dataStr);
-        dlAnchor.setAttribute("download", this.fileName || "ledger.json");
+        dlAnchor.setAttribute("download", `ledger_backup_${new Date().toISOString().slice(0,10)}.json`);
+        document.body.appendChild(dlAnchor);
+        dlAnchor.click();
+        dlAnchor.remove();
+    },
+
+    // 匯出 CSV 試算表
+    exportCsv() {
+        let csvContent = "data:text/csv;charset=utf-8,ID,Type,Category,Amount,Date,Note\r\n";
+        this.expenses.forEach(item => {
+            const row = [item.id, item.type, `"${item.category}"`, item.amount, item.date, `"${item.note || ''}"`];
+            csvContent += row.join(",") + "\r\n";
+        });
+        const encodedUri = encodeURI(csvContent);
+        const dlAnchor = document.createElement('a');
+        dlAnchor.setAttribute("href", encodedUri);
+        dlAnchor.setAttribute("download", `ledger_export_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(dlAnchor);
         dlAnchor.click();
         dlAnchor.remove();
@@ -82,17 +114,38 @@ export const LedgerStorage = {
 
     addRecord(item) {
         this.expenses.unshift(item);
-        this.saveToFile();
+        this.save();
     },
 
     deleteRecord(id) {
         this.expenses = this.expenses.filter(item => item.id !== id);
-        this.saveToFile();
+        this.save();
+    },
+
+    clearAll() {
+        this.expenses = [];
+        this.save();
     },
 
     calculateBalance() {
         return this.expenses.reduce((acc, item) => {
             return item.type === 'income' ? acc + item.amount : acc - item.amount;
         }, 0);
+    },
+
+    getMonthStats() {
+        const now = new Date();
+        const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+        let income = 0;
+        let expense = 0;
+
+        this.expenses.forEach(item => {
+            if (item.date && item.date.startsWith(currentMonth)) {
+                if (item.type === 'income') income += item.amount;
+                else expense += item.amount;
+            }
+        });
+
+        return { income, expense };
     }
 };
