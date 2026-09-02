@@ -2,7 +2,7 @@
 <html lang="zh-HK">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Obsidian Ledger Quantum Pro X</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -15,6 +15,8 @@
             color: #f5f5f7;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            touch-action: manipulation;
+            overscroll-behavior-y: none;
         }
 
         .quantum-mesh-bg {
@@ -33,15 +35,14 @@
             100% { transform: translate(70px, 90px) scale(1.25); }
         }
 
-        ::-webkit-scrollbar { width: 3px; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.2); border-radius: 4px; }
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
 
         .quantum-glass {
-            background: rgba(18, 18, 22, 0.72);
-            backdrop-filter: blur(60px);
-            -webkit-backdrop-filter: blur(60px);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            box-shadow: 0 40px 80px rgba(0, 0, 0, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            background: rgba(18, 18, 22, 0.8);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.15);
         }
 
         .input-quantum {
@@ -52,7 +53,7 @@
         .input-quantum:focus-within {
             background: rgba(255, 255, 255, 0.08);
             border-color: rgba(0, 113, 227, 0.9);
-            box-shadow: 0 0 30px rgba(0, 113, 227, 0.35);
+            box-shadow: 0 0 20px rgba(0, 113, 227, 0.3);
         }
 
         .tab-active {
@@ -61,183 +62,211 @@
             box-shadow: 0 4px 15px rgba(0, 113, 227, 0.4);
         }
 
-        /* Drag and drop styling */
+        /* Smooth Mobile Drag & Drop Animations */
+        .record-item {
+            transition: transform 0.25s cubic-bezier(0.2, 1, 0.1, 1), box-shadow 0.2s ease, opacity 0.2s ease;
+            touch-action: pan-y;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
         .dragging {
-            opacity: 0.4;
-            border: 1px dashed #0071e3 !important;
+            opacity: 0.85 !important;
+            scale: 1.03;
+            z-index: 100 !important;
+            box-shadow: 0 12px 30px rgba(0, 113, 227, 0.5), 0 0 0 2px rgba(0, 113, 227, 0.8) !important;
+            background: rgba(30, 30, 40, 0.95) !important;
+        }
+
+        .drag-placeholder {
+            background: rgba(0, 113, 227, 0.12);
+            border: 1.5px dashed rgba(0, 113, 227, 0.6);
+            border-radius: 12px;
+            margin-bottom: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .drag-handle {
+            touch-action: none;
+            cursor: grab;
+        }
+        .drag-handle:active {
+            cursor: grabbing;
         }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 md:p-4 relative overflow-hidden">
+<body class="min-h-screen flex items-center justify-center p-0 md:p-4 relative overflow-hidden bg-black">
 
     <div class="quantum-mesh-bg top-[-60px] left-[-60px]"></div>
     <div class="quantum-mesh-bg bottom-[-60px] right-[-60px]" style="background: linear-gradient(135deg, rgba(48, 209, 88, 0.25), rgba(100, 210, 255, 0.25)); animation-delay: -6s;"></div>
 
     <input type="file" id="importJsonInput" accept=".json" class="hidden">
 
-    <div class="w-full max-w-md quantum-glass rounded-[36px] p-4 flex flex-col h-[97vh] max-h-[960px] relative z-10 overflow-hidden">
+    <div class="w-full max-w-md quantum-glass md:rounded-[36px] p-3 md:p-4 flex flex-col h-[100dvh] md:h-[97vh] md:max-h-[960px] relative z-10 overflow-hidden justify-between">
         
-        <!-- Header -->
-        <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
-            <div>
-                <div class="flex items-center gap-2">
-                    <h1 class="text-base font-black tracking-tight text-white">Obsidian Quantum</h1>
-                    <span class="text-[8px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-extrabold tracking-widest border border-blue-500/30">PRO MAX</span>
-                </div>
-                <div class="flex items-center gap-1 mt-1">
-                    <button id="menuConfig" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-200 rounded-full text-[9px] font-semibold transition">⚙️ 系統</button>
-                    <button id="menuCharts" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-cyan-300 rounded-full text-[9px] font-semibold transition">📊 圖表</button>
-                    <button id="menuDebt" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-amber-300 rounded-full text-[9px] font-semibold transition">💳 借貸</button>
-                    <button id="menuWish" class="px-2 py-0.5 bg-white/5 hover:bg-white/10 border border-white/10 text-purple-300 rounded-full text-[9px] font-semibold transition">🎯 願望</button>
-                </div>
-            </div>
-            <div class="text-right shrink-0">
-                <span class="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest block">NET WORTH</span>
-                <div id="netBalanceContainer" class="text-lg font-black tracking-tight text-white">$0.00</div>
-            </div>
-        </div>
-
-        <!-- Panels -->
-        <div id="panelConfig" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
-                <span>Data Center</span>
-                <button id="closeConfig" class="text-gray-400 hover:text-white px-2 font-bold">✕</button>
-            </div>
-            <div class="grid grid-cols-3 gap-1.5">
-                <button id="exportJsonBtn" class="py-1.5 bg-white/5 border border-white/10 text-gray-200 rounded-xl text-[10px] font-bold">💾 備份JSON</button>
-                <button id="exportCsvBtn" class="py-1.5 bg-white/5 border border-white/10 text-gray-200 rounded-xl text-[10px] font-bold">📊 匯出CSV</button>
-                <button id="importJsonBtn" class="py-1.5 bg-white/5 border border-white/10 text-emerald-400 rounded-xl text-[10px] font-bold">📥 還原備份</button>
-                <button id="budgetSettingBtn" class="py-1.5 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-[10px] font-bold">🎯 月預算</button>
-                <button id="helpNlpBtn" class="py-1.5 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-xl text-[10px] font-bold">🪄 語意手冊</button>
-                <button id="clearDataBtn" class="py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold">🗑️ 重置</button>
-            </div>
-        </div>
-
-        <div id="panelCharts" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
-                <span>Analytics</span>
-                <button id="closeCharts" class="text-gray-400 hover:text-white px-2 font-bold">✕</button>
-            </div>
-            <div class="relative h-40 flex items-center justify-center">
-                <canvas id="analyticsChart"></canvas>
-            </div>
-        </div>
-
-        <div id="panelDebt" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
-                <span>Liabilities</span>
-                <button id="closeDebt" class="text-gray-400 hover:text-white px-2 font-bold">✕</button>
-            </div>
-            <div class="space-y-1.5 max-h-36 overflow-y-auto" id="debtListContainer"></div>
-            <div class="grid grid-cols-2 gap-1.5 pt-1">
-                <input type="text" id="debtTitle" placeholder="項目" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-gray-200 focus:outline-none">
-                <input type="number" id="debtAmount" placeholder="金額" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-gray-200 focus:outline-none">
-            </div>
-            <button id="addDebtBtn" class="w-full py-1.5 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold rounded-xl text-[10px]">➕ 新增債務</button>
-        </div>
-
-        <div id="panelWish" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
-            <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
-                <span>Wishlist</span>
-                <button id="closeWish" class="text-gray-400 hover:text-white px-2 font-bold">✕</button>
-            </div>
-            <div class="space-y-1.5 max-h-36 overflow-y-auto" id="wishListContainer"></div>
-            <div class="grid grid-cols-2 gap-1.5 pt-1">
-                <input type="text" id="wishTitle" placeholder="目標" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-gray-200 focus:outline-none">
-                <input type="number" id="wishTarget" placeholder="金額" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-gray-200 focus:outline-none">
-            </div>
-            <button id="addWishBtn" class="w-full py-1.5 bg-purple-500/20 border border-purple-500/40 text-purple-300 font-bold rounded-xl text-[10px]">🎯 新增願望</button>
-        </div>
-
-        <!-- Budget Bar -->
-        <div class="mb-2 p-2.5 bg-white/[0.03] border border-white/[0.07] rounded-[20px] space-y-1">
-            <div class="flex justify-between items-center text-[10px]">
-                <span class="text-gray-300 font-semibold">預算: <span id="budgetStatusText" class="text-white font-bold">$0 / $10,000</span></span>
-                <span id="budgetPercentage" class="text-emerald-400 font-bold">0%</span>
-            </div>
-            <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
-                <div id="budgetProgressBar" class="bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 h-full w-0 rounded-full transition-all duration-500"></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 text-[10px]">
-                <div><span class="text-gray-400">收入: </span><span id="monthIncome" class="font-bold text-emerald-400">$0.00</span></div>
-                <div><span class="text-gray-400">支出: </span><span id="monthExpense" class="font-bold text-rose-400">$0.00</span></div>
-            </div>
-        </div>
-
-        <!-- Input Form -->
-        <form id="ledgerForm" class="space-y-2 mb-2 input-quantum p-2.5 rounded-[24px]">
-            <div class="flex bg-black/40 p-0.5 rounded-xl border border-white/5">
-                <button type="button" id="tabAi" class="flex-1 py-1 rounded-lg tab-active font-bold text-[11px]">🪄 AI 魔法速記</button>
-                <button type="button" id="tabManual" class="flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]">✍️ 手動模式</button>
-            </div>
-
-            <div id="aiInputContainer" class="space-y-1.5">
-                <textarea id="aiText" rows="2" placeholder="自由輸入，例：$38 買Starbucks咖啡 支付寶 #下午茶" 
-                    class="w-full px-2.5 py-1.5 input-quantum rounded-xl text-xs text-blue-200 focus:outline-none resize-none font-medium placeholder-gray-500"></textarea>
-                <button type="button" id="aiSubmitBtn" class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl text-xs shadow-md">
-                    ✨ 智慧語意解析並記帳
-                </button>
-            </div>
-
-            <div id="manualInputContainer" class="hidden space-y-1.5">
-                <div class="flex bg-black/40 p-0.5 rounded-xl border border-white/5">
-                    <button type="button" id="typeExpense" class="flex-1 py-0.5 rounded-lg bg-white/10 text-white font-bold text-[10px]">支出</button>
-                    <button type="button" id="typeIncome" class="flex-1 py-0.5 rounded-lg text-gray-400 font-medium text-[10px]">收入</button>
-                    <button type="button" id="typeTransfer" class="flex-1 py-0.5 rounded-lg text-gray-400 font-medium text-[10px]">帳戶互轉</button>
-                </div>
-
-                <div class="grid grid-cols-3 gap-1.5">
-                    <div class="col-span-2 relative input-quantum rounded-xl overflow-hidden">
-                        <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold">$</span>
-                        <input type="number" id="amount" step="0.01" placeholder="0.00" class="w-full pl-6 pr-2 py-1 bg-transparent text-white text-sm font-black focus:outline-none">
+        <div>
+            <!-- Header -->
+            <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-base font-black tracking-tight text-white">Obsidian Quantum</h1>
+                        <span class="text-[8px] px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 font-extrabold tracking-widest border border-blue-500/30">PRO MAX</span>
                     </div>
-                    <select id="currency" class="px-2 py-1 input-quantum rounded-xl text-[10px] font-bold text-blue-400 focus:outline-none">
-                        <option value="HKD">🇭🇰 HKD</option>
-                        <option value="RMB">🇨🇳 RMB</option>
-                        <option value="USD">🇺🇸 USD</option>
-                        <option value="JPY">🇯🇵 JPY</option>
-                        <option value="TWD">🇹🇼 TWD</option>
-                    </select>
+                    <div class="flex items-center gap-1 mt-1 overflow-x-auto no-scrollbar">
+                        <button id="menuConfig" class="px-2.5 py-1 bg-white/5 active:bg-white/20 border border-white/10 text-gray-200 rounded-full text-[10px] font-semibold transition shrink-0">⚙️ 系統</button>
+                        <button id="menuCharts" class="px-2.5 py-1 bg-white/5 active:bg-white/20 border border-white/10 text-cyan-300 rounded-full text-[10px] font-semibold transition shrink-0">📊 圖表</button>
+                        <button id="menuDebt" class="px-2.5 py-1 bg-white/5 active:bg-white/20 border border-white/10 text-amber-300 rounded-full text-[10px] font-semibold transition shrink-0">💳 借貸</button>
+                        <button id="menuWish" class="px-2.5 py-1 bg-white/5 active:bg-white/20 border border-white/10 text-purple-300 rounded-full text-[10px] font-semibold transition shrink-0">🎯 願望</button>
+                    </div>
                 </div>
-
-                <div class="grid grid-cols-6 gap-1">
-                    <button type="button" data-action="-50" class="calc-btn py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[8px] font-bold text-rose-400">-50</button>
-                    <button type="button" data-action="-10" class="calc-btn py-0.5 bg-rose-500/10 border border-rose-500/20 rounded-lg text-[8px] font-bold text-rose-400">-10</button>
-                    <button type="button" data-action="+10" class="calc-btn py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[8px] font-bold text-emerald-400">+10</button>
-                    <button type="button" data-action="+50" class="calc-btn py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[8px] font-bold text-emerald-400">+50</button>
-                    <button type="button" data-action="+100" class="calc-btn py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[8px] font-bold text-emerald-400">+100</button>
-                    <button type="button" data-action="+500" class="calc-btn py-0.5 bg-emerald-500/10 border border-emerald-500/20 rounded-lg text-[8px] font-bold text-emerald-400">+500</button>
+                <div class="text-right shrink-0">
+                    <span class="text-[8px] font-extrabold text-gray-400 uppercase tracking-widest block">NET WORTH</span>
+                    <div id="netBalanceContainer" class="text-base md:text-lg font-black tracking-tight text-white">$0.00</div>
                 </div>
-
-                <div class="grid grid-cols-3 gap-1.5">
-                    <select id="category" class="px-2 py-1 input-quantum rounded-xl text-[10px] font-bold text-gray-200 focus:outline-none"></select>
-                    <select id="account" class="px-2 py-1 input-quantum rounded-xl text-[10px] font-bold text-gray-200 focus:outline-none">
-                        <option value="Alipay">💙 支付寶</option>
-                        <option value="WeChat">💚 微信支付</option>
-                        <option value="FPS">⚡ 轉數快</option>
-                        <option value="Cash">💵 現金</option>
-                        <option value="Octopus">🚇 八達通</option>
-                        <option value="CreditCard">💳 信用卡</option>
-                    </select>
-                    <input type="date" id="date" required class="px-1.5 py-1 input-quantum rounded-xl text-[9px] font-bold text-gray-200 focus:outline-none">
-                </div>
-
-                <div class="grid grid-cols-2 gap-1.5">
-                    <input type="text" id="note" placeholder="備註" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-gray-200 focus:outline-none">
-                    <input type="text" id="tags" placeholder="標籤" class="px-2 py-1 input-quantum rounded-xl text-[10px] text-blue-300 focus:outline-none">
-                </div>
-
-                <button type="submit" id="submitBtn" class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl text-xs shadow-md">
-                    確認記錄支出
-                </button>
             </div>
-        </form>
 
-        <!-- Records List with Drag and Drop Sort -->
-        <div class="flex-1 overflow-hidden flex flex-col">
+            <!-- Panels -->
+            <div id="panelConfig" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
+                    <span>Data Center</span>
+                    <button id="closeConfig" class="text-gray-400 hover:text-white px-2 font-bold text-base">✕</button>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button id="exportJsonBtn" class="py-2 bg-white/5 border border-white/10 text-gray-200 rounded-xl text-[10px] font-bold active:scale-95 transition">💾 備份JSON</button>
+                    <button id="exportCsvBtn" class="py-2 bg-white/5 border border-white/10 text-gray-200 rounded-xl text-[10px] font-bold active:scale-95 transition">📊 匯出CSV</button>
+                    <button id="importJsonBtn" class="py-2 bg-white/5 border border-white/10 text-emerald-400 rounded-xl text-[10px] font-bold active:scale-95 transition">📥 還原備份</button>
+                    <button id="budgetSettingBtn" class="py-2 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-xl text-[10px] font-bold active:scale-95 transition">🎯 月預算</button>
+                    <button id="helpNlpBtn" class="py-2 bg-purple-500/10 border border-purple-500/20 text-purple-300 rounded-xl text-[10px] font-bold active:scale-95 transition">🪄 語意手冊</button>
+                    <button id="clearDataBtn" class="py-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl text-[10px] font-bold active:scale-95 transition">🗑️ 重置</button>
+                </div>
+            </div>
+
+            <div id="panelCharts" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
+                    <span>Analytics</span>
+                    <button id="closeCharts" class="text-gray-400 hover:text-white px-2 font-bold text-base">✕</button>
+                </div>
+                <div class="relative h-40 flex items-center justify-center">
+                    <canvas id="analyticsChart"></canvas>
+                </div>
+            </div>
+
+            <div id="panelDebt" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
+                    <span>Liabilities</span>
+                    <button id="closeDebt" class="text-gray-400 hover:text-white px-2 font-bold text-base">✕</button>
+                </div>
+                <div class="space-y-1.5 max-h-36 overflow-y-auto" id="debtListContainer"></div>
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <input type="text" id="debtTitle" placeholder="項目" class="px-2.5 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
+                    <input type="number" id="debtAmount" placeholder="金額" class="px-2.5 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
+                </div>
+                <button id="addDebtBtn" class="w-full py-2 bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold rounded-xl text-xs active:scale-95 transition">➕ 新增債務</button>
+            </div>
+
+            <div id="panelWish" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[24px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
+                <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
+                    <span>Wishlist</span>
+                    <button id="closeWish" class="text-gray-400 hover:text-white px-2 font-bold text-base">✕</button>
+                </div>
+                <div class="space-y-1.5 max-h-36 overflow-y-auto" id="wishListContainer"></div>
+                <div class="grid grid-cols-2 gap-1.5 pt-1">
+                    <input type="text" id="wishTitle" placeholder="目標" class="px-2.5 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
+                    <input type="number" id="wishTarget" placeholder="金額" class="px-2.5 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
+                </div>
+                <button id="addWishBtn" class="w-full py-2 bg-purple-500/20 border border-purple-500/40 text-purple-300 font-bold rounded-xl text-xs active:scale-95 transition">🎯 新增願望</button>
+            </div>
+
+            <!-- Budget Bar -->
+            <div class="mb-2 p-2.5 bg-white/[0.03] border border-white/[0.07] rounded-[20px] space-y-1">
+                <div class="flex justify-between items-center text-[10px]">
+                    <span class="text-gray-300 font-semibold">預算: <span id="budgetStatusText" class="text-white font-bold">$0 / $10,000</span></span>
+                    <span id="budgetPercentage" class="text-emerald-400 font-bold">0%</span>
+                </div>
+                <div class="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                    <div id="budgetProgressBar" class="bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 h-full w-0 rounded-full transition-all duration-500"></div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-white/5 text-[10px]">
+                    <div><span class="text-gray-400">收入: </span><span id="monthIncome" class="font-bold text-emerald-400">$0.00</span></div>
+                    <div><span class="text-gray-400">支出: </span><span id="monthExpense" class="font-bold text-rose-400">$0.00</span></div>
+                </div>
+            </div>
+
+            <!-- Input Form -->
+            <form id="ledgerForm" class="space-y-2 mb-2 input-quantum p-2.5 rounded-[24px]">
+                <div class="flex bg-black/40 p-0.5 rounded-xl border border-white/5">
+                    <button type="button" id="tabAi" class="flex-1 py-1.5 rounded-lg tab-active font-bold text-xs transition">🪄 AI 魔法速記</button>
+                    <button type="button" id="tabManual" class="flex-1 py-1.5 rounded-lg text-gray-400 font-medium text-xs transition">✍️ 手動模式</button>
+                </div>
+
+                <div id="aiInputContainer" class="space-y-1.5">
+                    <textarea id="aiText" rows="2" placeholder="自由輸入，例：$38 買Starbucks咖啡 支付寶 #下午茶" 
+                        class="w-full px-2.5 py-1.5 input-quantum rounded-xl text-xs text-blue-200 focus:outline-none resize-none font-medium placeholder-gray-500"></textarea>
+                    <button type="button" id="aiSubmitBtn" class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition">
+                        ✨ 智慧語意解析並記帳
+                    </button>
+                </div>
+
+                <div id="manualInputContainer" class="hidden space-y-1.5">
+                    <div class="flex bg-black/40 p-0.5 rounded-xl border border-white/5">
+                        <button type="button" id="typeExpense" class="flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]">支出</button>
+                        <button type="button" id="typeIncome" class="flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]">收入</button>
+                        <button type="button" id="typeTransfer" class="flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]">帳戶互轉</button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <div class="col-span-2 relative input-quantum rounded-xl overflow-hidden">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 font-bold text-xs">$</span>
+                            <input type="number" id="amount" step="0.01" placeholder="0.00" class="w-full pl-6 pr-2 py-1.5 bg-transparent text-white text-sm font-black focus:outline-none">
+                        </div>
+                        <select id="currency" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-blue-400 focus:outline-none">
+                            <option value="HKD">🇭🇰 HKD</option>
+                            <option value="RMB">🇨🇳 RMB</option>
+                            <option value="USD">🇺🇸 USD</option>
+                            <option value="JPY">🇯🇵 JPY</option>
+                            <option value="TWD">🇹🇼 TWD</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-6 gap-1">
+                        <button type="button" data-action="-50" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 active:bg-rose-500/30 rounded-lg text-[9px] font-bold text-rose-400">-50</button>
+                        <button type="button" data-action="-10" class="calc-btn py-1 bg-rose-500/10 border border-rose-500/20 active:bg-rose-500/30 rounded-lg text-[9px] font-bold text-rose-400">-10</button>
+                        <button type="button" data-action="+10" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 active:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400">+10</button>
+                        <button type="button" data-action="+50" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 active:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400">+50</button>
+                        <button type="button" data-action="+100" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 active:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400">+100</button>
+                        <button type="button" data-action="+500" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 active:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400">+500</button>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-1.5">
+                        <select id="category" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none"></select>
+                        <select id="account" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
+                            <option value="Alipay">💙 支付寶</option>
+                            <option value="WeChat">💚 微信支付</option>
+                            <option value="FPS">⚡ 轉數快</option>
+                            <option value="Cash">💵 現金</option>
+                            <option value="Octopus">🚇 八達通</option>
+                            <option value="CreditCard">💳 信用卡</option>
+                        </select>
+                        <input type="date" id="date" required class="px-1.5 py-1.5 input-quantum rounded-xl text-[10px] font-bold text-gray-200 focus:outline-none">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-1.5">
+                        <input type="text" id="note" placeholder="備註" class="px-2 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
+                        <input type="text" id="tags" placeholder="標籤" class="px-2 py-1.5 input-quantum rounded-xl text-xs text-blue-300 focus:outline-none">
+                    </div>
+
+                    <button type="submit" id="submitBtn" class="w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition">
+                        確認記錄支出
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Records List with Touch & Mouse Drag Sort -->
+        <div class="flex-1 overflow-hidden flex flex-col min-h-0">
             <div class="flex items-center justify-between gap-1 mb-1.5 px-0.5">
                 <div class="flex items-center gap-1">
-                    <select id="filterAccount" class="bg-white/5 border border-white/10 rounded-lg text-[9px] text-gray-300 px-1.5 py-0.5 focus:outline-none">
+                    <select id="filterAccount" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1.5 py-1 focus:outline-none">
                         <option value="ALL">全部帳戶</option>
                         <option value="Alipay">支付寶</option>
                         <option value="WeChat">微信</option>
@@ -246,7 +275,7 @@
                         <option value="Octopus">八達通</option>
                         <option value="CreditCard">信用卡</option>
                     </select>
-                    <select id="sortOrder" class="bg-white/5 border border-white/10 rounded-lg text-[9px] text-gray-300 px-1.5 py-0.5 focus:outline-none">
+                    <select id="sortOrder" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1.5 py-1 focus:outline-none">
                         <option value="manual">🖐️ 拖拽自訂排序</option>
                         <option value="date_desc">📅 日期 & 時間 (最新)</option>
                         <option value="date_asc">📅 日期 & 時間 (最舊)</option>
@@ -255,14 +284,14 @@
                     </select>
                 </div>
 
-                <div class="relative flex-1 max-w-[100px]">
+                <div class="relative flex-1 max-w-[90px]">
                     <input type="text" id="searchInput" placeholder="搜尋..." 
-                        class="w-full px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-[9px] text-gray-300 focus:outline-none">
+                        class="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-gray-300 focus:outline-none">
                 </div>
-                <span id="recordCount" class="text-[9px] text-gray-400 font-bold shrink-0">0 筆</span>
+                <span id="recordCount" class="text-[10px] text-gray-400 font-bold shrink-0">0 筆</span>
             </div>
             
-            <div id="recordList" class="flex-1 overflow-y-auto space-y-1.5 pr-0.5">
+            <div id="recordList" class="flex-1 overflow-y-auto space-y-1.5 pr-0.5 relative">
                 <div class="text-center text-gray-500 text-xs py-8">✨ 載入中...</div>
             </div>
         </div>
@@ -372,6 +401,7 @@
             setupEvents();
             updateCategories();
             render();
+            initSmoothMobileDrag();
         });
 
         function parseAiText(text) {
@@ -473,15 +503,15 @@
             const aiContainer = document.getElementById('aiInputContainer');
 
             tabAi.addEventListener('click', () => {
-                tabAi.className = "flex-1 py-1 rounded-lg tab-active font-bold text-[11px]";
-                tabManual.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+                tabAi.className = "flex-1 py-1.5 rounded-lg tab-active font-bold text-xs transition";
+                tabManual.className = "flex-1 py-1.5 rounded-lg text-gray-400 font-medium text-xs transition";
                 aiContainer.classList.remove('hidden');
                 manualContainer.classList.add('hidden');
             });
 
             tabManual.addEventListener('click', () => {
-                tabManual.className = "flex-1 py-1 rounded-lg tab-active font-bold text-[11px]";
-                tabAi.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+                tabManual.className = "flex-1 py-1.5 rounded-lg tab-active font-bold text-xs transition";
+                tabAi.className = "flex-1 py-1.5 rounded-lg text-gray-400 font-medium text-xs transition";
                 manualContainer.classList.remove('hidden');
                 aiContainer.classList.add('hidden');
             });
@@ -593,65 +623,108 @@
                 document.getElementById('tags').value = '';
                 document.getElementById('date').valueAsDate = new Date();
             });
-
-            // Drag and drop event listeners on record list
-            const recordListEl = document.getElementById('recordList');
-            let draggedItem = null;
-
-            recordListEl.addEventListener('dragstart', (e) => {
-                if (currentSortOrder !== 'manual') return;
-                const target = e.target.closest('[data-id]');
-                if (target) {
-                    draggedItem = target;
-                    target.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                }
-            });
-
-            recordListEl.addEventListener('dragend', (e) => {
-                if (draggedItem) {
-                    draggedItem.classList.remove('dragging');
-                    draggedItem = null;
-                }
-            });
-
-            recordListEl.addEventListener('dragover', (e) => {
-                if (currentSortOrder !== 'manual') return;
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                const afterElement = getDragAfterElement(recordListEl, e.clientY);
-                if (afterElement == null) {
-                    recordListEl.appendChild(draggedItem);
-                } else {
-                    recordListEl.insertBefore(draggedItem, afterElement);
-                }
-            });
-
-            recordListEl.addEventListener('drop', (e) => {
-                if (currentSortOrder !== 'manual') return;
-                e.preventDefault();
-                saveDragOrder();
-            });
         }
 
-        function getDragAfterElement(container, y) {
-            const draggableElements = [...container.querySelectorAll('[data-id]:not(.dragging)')];
-            return draggableElements.reduce((closest, child) => {
-                const box = child.getBoundingClientRect();
-                const offset = y - box.top - box.height / 2;
-                if (offset < 0 && offset > closest.offset) {
-                    return { offset: offset, element: child };
-                } else {
-                    return closest;
+        /* Fluid Mobile & Desktop Touch Drag Engine */
+        function initSmoothMobileDrag() {
+            const listContainer = document.getElementById('recordList');
+            let activeItem = null;
+            let placeholder = null;
+            let initialY = 0;
+            let currentY = 0;
+            let itemInitialTop = 0;
+            let itemHeight = 0;
+
+            function onPointerDown(e) {
+                if (currentSortOrder !== 'manual') return;
+                const handle = e.target.closest('.drag-handle');
+                if (!handle) return;
+
+                activeItem = handle.closest('.record-item');
+                if (!activeItem) return;
+
+                if (window.navigator.vibrate) window.navigator.vibrate(15);
+
+                const rect = activeItem.getBoundingClientRect();
+                itemInitialTop = rect.top;
+                itemHeight = rect.height;
+                initialY = e.clientY || e.touches[0].clientY;
+
+                // Create smooth drag placeholder
+                placeholder = document.createElement('div');
+                placeholder.className = 'drag-placeholder';
+                placeholder.style.height = `${itemHeight}px`;
+                activeItem.parentNode.insertBefore(placeholder, activeItem);
+
+                activeItem.classList.add('dragging');
+                activeItem.style.position = 'fixed';
+                activeItem.style.top = `${rect.top}px`;
+                activeItem.style.left = `${rect.left}px`;
+                activeItem.style.width = `${rect.width}px`;
+
+                window.addEventListener('pointermove', onPointerMove, { passive: false });
+                window.addEventListener('pointerup', onPointerEnd);
+                window.addEventListener('pointercancel', onPointerEnd);
+            }
+
+            function onPointerMove(e) {
+                if (!activeItem) return;
+                e.preventDefault();
+
+                currentY = e.clientY || (e.touches && e.touches[0].clientY) || initialY;
+                const deltaY = currentY - initialY;
+                activeItem.style.transform = `translate3d(0, ${deltaY}px, 0)`;
+
+                const activeCenterY = itemInitialTop + deltaY + itemHeight / 2;
+                const siblings = [...listContainer.querySelectorAll('.record-item:not(.dragging)')];
+
+                let targetSibling = null;
+                for (const sibling of siblings) {
+                    const box = sibling.getBoundingClientRect();
+                    if (activeCenterY < box.top + box.height / 2) {
+                        targetSibling = sibling;
+                        break;
+                    }
                 }
-            }, { offset: Number.NEGATIVE_INFINITY }).element;
+
+                if (targetSibling) {
+                    listContainer.insertBefore(placeholder, targetSibling);
+                } else {
+                    listContainer.appendChild(placeholder);
+                }
+            }
+
+            function onPointerEnd() {
+                if (!activeItem) return;
+
+                window.removeEventListener('pointermove', onPointerMove);
+                window.removeEventListener('pointerup', onPointerEnd);
+                window.removeEventListener('pointercancel', onPointerEnd);
+
+                activeItem.classList.remove('dragging');
+                activeItem.style.position = '';
+                activeItem.style.top = '';
+                activeItem.style.left = '';
+                activeItem.style.width = '';
+                activeItem.style.transform = '';
+
+                if (placeholder && placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(activeItem, placeholder);
+                    placeholder.remove();
+                }
+
+                saveDragOrder();
+                activeItem = null;
+                placeholder = null;
+            }
+
+            listContainer.addEventListener('pointerdown', onPointerDown);
         }
 
         function saveDragOrder() {
             const currentListIds = [...document.querySelectorAll('#recordList [data-id]')].map(el => parseInt(el.getAttribute('data-id')));
             const newExpensesOrder = [];
             
-            // Re-order active filtered items first according to DOM, then keep remaining hidden items
             currentListIds.forEach(id => {
                 const item = QuantumLedger.expenses.find(x => x.id === id);
                 if (item) newExpensesOrder.push(item);
@@ -675,21 +748,21 @@
             const submit = document.getElementById('submitBtn');
             updateCategories();
 
-            exp.className = "flex-1 py-0.5 rounded-lg text-gray-400 font-medium text-[10px]";
-            inc.className = "flex-1 py-0.5 rounded-lg text-gray-400 font-medium text-[10px]";
-            trf.className = "flex-1 py-0.5 rounded-lg text-gray-400 font-medium text-[10px]";
+            exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+            inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+            trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
 
             if (type === 'expense') {
-                exp.className = "flex-1 py-0.5 rounded-lg bg-white/10 text-white font-bold text-[10px]";
-                submit.className = "w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold rounded-xl text-xs shadow-md";
+                exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+                submit.className = "w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
                 submit.textContent = "確認記錄支出";
             } else if (type === 'income') {
-                inc.className = "flex-1 py-0.5 rounded-lg bg-emerald-500 text-white font-bold text-[10px]";
-                submit.className = "w-full py-2 bg-gradient-to-r from-emerald-400 to-emerald-600 text-white font-bold rounded-xl text-xs shadow-md";
+                inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
+                submit.className = "w-full py-2 bg-gradient-to-r from-emerald-400 to-emerald-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
                 submit.textContent = "確認記錄收入";
             } else {
-                trf.className = "flex-1 py-0.5 rounded-lg bg-purple-600 text-white font-bold text-[10px]";
-                submit.className = "w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold rounded-xl text-xs shadow-md";
+                trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
+                submit.className = "w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
                 submit.textContent = "確認帳戶互轉";
             }
         }
@@ -740,7 +813,7 @@
                         <div class="text-[9px] text-gray-400">已還: $${d.paid} / 總額: $${d.amount}</div>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button onclick="payDebt(${d.id})" class="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded-lg text-[9px] font-bold">還款</button>
+                        <button onclick="payDebt(${d.id})" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded-lg text-[9px] font-bold active:scale-95 transition">還款</button>
                         <button onclick="delDebt(${d.id})" class="text-gray-500 hover:text-rose-400 px-1">✕</button>
                     </div>
                 `;
@@ -786,7 +859,7 @@
                         <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full" style="width: ${pct}%"></div>
                     </div>
                     <div class="flex justify-end gap-1 pt-0.5">
-                        <button onclick="depositWish(${w.id})" class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-lg text-[9px] font-bold">存錢</button>
+                        <button onclick="depositWish(${w.id})" class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-lg text-[9px] font-bold active:scale-95 transition">存錢</button>
                         <button onclick="delWish(${w.id})" class="text-gray-500 hover:text-rose-400 px-1 text-[9px]">刪除</button>
                     </div>
                 `;
@@ -842,7 +915,6 @@
                 );
             }
 
-            // Apply auto sort only if manual is not selected
             if (currentSortOrder !== 'manual') {
                 items.sort((a, b) => {
                     if (currentSortOrder === 'date_desc') {
@@ -871,15 +943,16 @@
                 const isTrf = item.type === 'transfer';
                 const div = document.createElement('div');
                 div.setAttribute('data-id', item.id);
-                div.setAttribute('draggable', currentSortOrder === 'manual' ? 'true' : 'false');
-                div.className = "flex items-center justify-between p-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.07] rounded-xl transition group shadow-sm cursor-grab active:cursor-grabbing";
+                div.className = "record-item flex items-center justify-between p-2.5 bg-white/[0.04] active:bg-white/[0.08] border border-white/[0.07] rounded-xl transition-shadow shadow-sm";
 
                 const icon = getCategoryIcon(item.category);
                 const accInfo = getAccountDetails(item.account);
 
                 div.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="text-gray-600 text-xs ${currentSortOrder === 'manual' ? 'inline-block' : 'hidden'}">⋮⋮</span>
+                    <div class="flex items-center gap-2.5">
+                        <div class="drag-handle p-1 -ml-1 text-gray-500 hover:text-white ${currentSortOrder === 'manual' ? 'flex' : 'hidden'} items-center justify-center cursor-grab active:cursor-grabbing select-none">
+                            <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                        </div>
                         <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm bg-gradient-to-br from-white/10 to-white/5 border border-white/15 shrink-0">
                             ${icon}
                         </div>
@@ -902,7 +975,7 @@
                             </span>
                             ${item.currency !== 'HKD' ? `<span class="block text-[8px] text-gray-500">(${item.currency} ${item.amount})</span>` : ''}
                         </div>
-                        <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 opacity-0 group-hover:opacity-100 transition p-0.5">✕</button>
+                        <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 p-1 transition">✕</button>
                     </div>
                 `;
 
@@ -917,7 +990,7 @@
 
             const balance = QuantumLedger.expenses.reduce((acc, item) => item.type === 'income' ? acc + item.hkdAmount : item.type === 'expense' ? acc - item.hkdAmount : acc, 0);
             balanceContainer.textContent = (balance >= 0 ? '$' : '-$') + Math.abs(balance).toFixed(2);
-            balanceContainer.className = `text-lg font-black tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
+            balanceContainer.className = `text-base md:text-lg font-black tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
         }
 
         function renderAnalyticsChart() {
