@@ -95,6 +95,15 @@ const QuantumLedger = {
         this.save();
     },
 
+    updateRecord(updatedItem) {
+        const index = this.expenses.findIndex(item => String(item.id) === String(updatedItem.id));
+        if (index !== -1) {
+            updatedItem.hkdAmount = this.convertToHKD(updatedItem.amount, updatedItem.currency);
+            this.expenses[index] = updatedItem;
+            this.save();
+        }
+    },
+
     deleteRecord(id) {
         this.expenses = this.expenses.filter(item => String(item.id) !== String(id));
         this.save();
@@ -122,6 +131,7 @@ const QuantumLedger = {
 };
 
 let currentType = 'expense';
+let editingType = 'expense';
 let searchQuery = '';
 let currentAccountFilter = 'ALL';
 let currentSortOrder = 'manual';
@@ -224,6 +234,58 @@ function parseAiText(text) {
     };
 }
 
+function openEditModal(record) {
+    document.getElementById('editId').value = record.id;
+    document.getElementById('editAmount').value = record.amount;
+    document.getElementById('editCurrency').value = record.currency || 'HKD';
+    document.getElementById('editAccount').value = record.account || 'Alipay';
+    document.getElementById('editDate').value = record.date || new Date().toISOString().slice(0, 10);
+    document.getElementById('editNote').value = record.note || '';
+    document.getElementById('editTags').value = record.tags || '';
+
+    switchEditType(record.type || 'expense');
+    document.getElementById('editCategory').value = record.category;
+
+    document.getElementById('panelEdit').classList.remove('hidden');
+}
+
+function closeEditModal() {
+    document.getElementById('panelEdit').classList.add('hidden');
+}
+
+function switchEditType(type) {
+    editingType = type;
+    const exp = document.getElementById('editTypeExpense');
+    const inc = document.getElementById('editTypeIncome');
+    const trf = document.getElementById('editTypeTransfer');
+    
+    updateEditCategories();
+
+    exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+
+    if (type === 'expense') {
+        exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+    } else if (type === 'income') {
+        inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
+    } else {
+        trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
+    }
+}
+
+function updateEditCategories() {
+    const select = document.getElementById('editCategory');
+    select.innerHTML = '';
+    const list = editingType === 'income' ? QuantumLedger.incomeCategories : QuantumLedger.expenseCategories;
+    list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = `${item.icon} ${item.name}`;
+        select.appendChild(opt);
+    });
+}
+
 function setupEvents() {
     const importInput = document.getElementById('importJsonInput');
 
@@ -253,6 +315,36 @@ function setupEvents() {
 
     document.getElementById('menuWish').addEventListener('click', () => { const isOpen = !panels.wish.classList.contains('hidden'); closeAllPanels(); if(!isOpen) { panels.wish.classList.remove('hidden'); renderWishList(); } });
     document.getElementById('closeWish').addEventListener('click', () => panels.wish.classList.add('hidden'));
+
+    // Edit Panel Events
+    document.getElementById('closeEdit').addEventListener('click', closeEditModal);
+    document.getElementById('editTypeExpense').addEventListener('click', () => switchEditType('expense'));
+    document.getElementById('editTypeIncome').addEventListener('click', () => switchEditType('income'));
+    document.getElementById('editTypeTransfer').addEventListener('click', () => switchEditType('transfer'));
+
+    document.getElementById('saveEditBtn').addEventListener('click', () => {
+        const id = document.getElementById('editId').value;
+        const amount = parseFloat(document.getElementById('editAmount').value);
+        if (!amount || amount <= 0) {
+            alert('請輸入有效金額！');
+            return;
+        }
+
+        QuantumLedger.updateRecord({
+            id: id,
+            type: editingType,
+            amount: amount,
+            currency: document.getElementById('editCurrency').value,
+            category: document.getElementById('editCategory').value,
+            account: document.getElementById('editAccount').value,
+            date: document.getElementById('editDate').value,
+            note: document.getElementById('editNote').value,
+            tags: document.getElementById('editTags').value
+        });
+
+        closeEditModal();
+        render();
+    });
 
     const tabManual = document.getElementById('tabManual');
     const tabAi = document.getElementById('tabAi');
@@ -400,11 +492,18 @@ function setupEvents() {
 
     document.getElementById('recordList').addEventListener('click', (e) => {
         const delBtn = e.target.closest('.del-btn');
+        const editBtn = e.target.closest('.edit-btn');
+
         if (delBtn) {
             e.stopPropagation();
             const id = delBtn.getAttribute('data-id');
             QuantumLedger.deleteRecord(id);
             render();
+        } else if (editBtn) {
+            e.stopPropagation();
+            const id = editBtn.getAttribute('data-id');
+            const record = QuantumLedger.expenses.find(x => String(x.id) === String(id));
+            if (record) openEditModal(record);
         }
     });
 }
@@ -780,14 +879,15 @@ function render() {
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-1.5 shrink-0 pl-1">
-                <div class="text-right">
+            <div class="flex items-center gap-1 shrink-0 pl-1">
+                <div class="text-right mr-1">
                     <span class="font-black text-xs tracking-tight ${isInc ? 'text-emerald-400' : isTrf ? 'text-purple-400' : 'text-gray-100'}">
                         ${isInc ? '+' : isTrf ? '⇄ ' : '-'}$${item.hkdAmount.toFixed(2)}
                     </span>
                     ${item.currency !== 'HKD' ? `<span class="block text-[8px] text-gray-500">(${item.currency} ${item.amount})</span>` : ''}
                 </div>
-                <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 p-1.5 transition text-xs">✕</button>
+                <button data-id="${item.id}" class="edit-btn text-gray-500 hover:text-blue-400 p-1 transition text-xs">✏️</button>
+                <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 p-1 transition text-xs">✕</button>
             </div>
         `;
 
