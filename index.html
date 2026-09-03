@@ -62,10 +62,8 @@
             box-shadow: 0 4px 15px rgba(0, 113, 227, 0.4);
         }
 
-        /* Smooth Mobile Drag & Drop Animations */
         .record-item {
             transition: transform 0.25s cubic-bezier(0.2, 1, 0.1, 1), box-shadow 0.2s ease, opacity 0.2s ease;
-            touch-action: pan-y;
             user-select: none;
             -webkit-user-select: none;
         }
@@ -93,6 +91,9 @@
         .drag-handle:active {
             cursor: grabbing;
         }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-0 md:p-4 relative overflow-hidden bg-black">
@@ -104,7 +105,7 @@
 
     <div class="w-full max-w-md quantum-glass md:rounded-[36px] p-3 md:p-4 flex flex-col h-[100dvh] md:h-[97vh] md:max-h-[960px] relative z-10 overflow-hidden justify-between">
         
-        <div>
+        <div class="flex flex-col min-h-0 flex-shrink-0">
             <!-- Header -->
             <div class="flex justify-between items-center mb-2 pb-2 border-b border-white/10">
                 <div>
@@ -262,11 +263,11 @@
             </form>
         </div>
 
-        <!-- Records List with Touch & Mouse Drag Sort -->
+        <!-- Records List -->
         <div class="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div class="flex items-center justify-between gap-1 mb-1.5 px-0.5">
+            <div class="flex items-center justify-between gap-1 mb-1.5 px-0.5 flex-shrink-0">
                 <div class="flex items-center gap-1">
-                    <select id="filterAccount" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1.5 py-1 focus:outline-none">
+                    <select id="filterAccount" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1 py-1 focus:outline-none max-w-[85px]">
                         <option value="ALL">全部帳戶</option>
                         <option value="Alipay">支付寶</option>
                         <option value="WeChat">微信</option>
@@ -275,23 +276,23 @@
                         <option value="Octopus">八達通</option>
                         <option value="CreditCard">信用卡</option>
                     </select>
-                    <select id="sortOrder" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1.5 py-1 focus:outline-none">
+                    <select id="sortOrder" class="bg-white/5 border border-white/10 rounded-lg text-[10px] text-gray-300 px-1 py-1 focus:outline-none max-w-[110px]">
                         <option value="manual">🖐️ 拖拽自訂排序</option>
-                        <option value="date_desc">📅 日期 & 時間 (最新)</option>
-                        <option value="date_asc">📅 日期 & 時間 (最舊)</option>
+                        <option value="date_desc">📅 日期 (最新)</option>
+                        <option value="date_asc">📅 日期 (最舊)</option>
                         <option value="amount_desc">💰 金額 (高至低)</option>
                         <option value="amount_asc">💰 金額 (低至高)</option>
                     </select>
                 </div>
 
-                <div class="relative flex-1 max-w-[90px]">
+                <div class="relative flex-1 max-w-[80px]">
                     <input type="text" id="searchInput" placeholder="搜尋..." 
                         class="w-full px-2 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-gray-300 focus:outline-none">
                 </div>
                 <span id="recordCount" class="text-[10px] text-gray-400 font-bold shrink-0">0 筆</span>
             </div>
             
-            <div id="recordList" class="flex-1 overflow-y-auto space-y-1.5 pr-0.5 relative">
+            <div id="recordList" class="flex-1 overflow-y-auto space-y-1.5 pr-0.5 relative touch-pan-y">
                 <div class="text-center text-gray-500 text-xs py-8">✨ 載入中...</div>
             </div>
         </div>
@@ -304,6 +305,10 @@
         const WISH_KEY = 'obsidian_quantum_wish_v4';
 
         const EXCHANGE_RATES = { HKD: 1.0, RMB: 1.1, USD: 7.8, JPY: 0.052, TWD: 0.25 };
+
+        function generateUniqueId() {
+            return Date.now() + Math.floor(Math.random() * 10000);
+        }
 
         const QuantumLedger = {
             expenses: [],
@@ -459,7 +464,7 @@
             if (!note) note = category;
 
             return {
-                id: Date.now(),
+                id: generateUniqueId(),
                 type,
                 amount,
                 currency: text.toLowerCase().includes('rmb') || text.includes('人民幣') ? 'RMB' : 'HKD',
@@ -565,7 +570,7 @@
                 const title = document.getElementById('debtTitle').value.trim();
                 const amount = parseFloat(document.getElementById('debtAmount').value);
                 if (!title || !amount) return;
-                QuantumLedger.debts.push({ id: Date.now(), title, amount, paid: 0 });
+                QuantumLedger.debts.push({ id: generateUniqueId(), title, amount, paid: 0 });
                 QuantumLedger.save();
                 document.getElementById('debtTitle').value = '';
                 document.getElementById('debtAmount').value = '';
@@ -576,7 +581,7 @@
                 const title = document.getElementById('wishTitle').value.trim();
                 const target = parseFloat(document.getElementById('wishTarget').value);
                 if (!title || !target) return;
-                QuantumLedger.wishes.push({ id: Date.now(), title, target, current: 0 });
+                QuantumLedger.wishes.push({ id: generateUniqueId(), title, target, current: 0 });
                 QuantumLedger.save();
                 document.getElementById('wishTitle').value = '';
                 document.getElementById('wishTarget').value = '';
@@ -606,7 +611,7 @@
                 if (!amount || amount <= 0) return;
 
                 QuantumLedger.addRecord({
-                    id: Date.now(),
+                    id: generateUniqueId(),
                     type: currentType,
                     amount,
                     currency: document.getElementById('currency').value,
@@ -623,15 +628,25 @@
                 document.getElementById('tags').value = '';
                 document.getElementById('date').valueAsDate = new Date();
             });
+
+            // Single Event Listener Delegation for Item Deletion
+            document.getElementById('recordList').addEventListener('click', (e) => {
+                const delBtn = e.target.closest('.del-btn');
+                if (delBtn) {
+                    e.stopPropagation();
+                    const id = parseInt(delBtn.getAttribute('data-id'));
+                    QuantumLedger.deleteRecord(id);
+                    render();
+                }
+            });
         }
 
-        /* Fluid Mobile & Desktop Touch Drag Engine */
+        /* Mobile Drag Sort Engine with Touch Protection */
         function initSmoothMobileDrag() {
             const listContainer = document.getElementById('recordList');
             let activeItem = null;
             let placeholder = null;
             let initialY = 0;
-            let currentY = 0;
             let itemInitialTop = 0;
             let itemHeight = 0;
 
@@ -648,9 +663,8 @@
                 const rect = activeItem.getBoundingClientRect();
                 itemInitialTop = rect.top;
                 itemHeight = rect.height;
-                initialY = e.clientY || e.touches[0].clientY;
+                initialY = e.clientY;
 
-                // Create smooth drag placeholder
                 placeholder = document.createElement('div');
                 placeholder.className = 'drag-placeholder';
                 placeholder.style.height = `${itemHeight}px`;
@@ -669,10 +683,9 @@
 
             function onPointerMove(e) {
                 if (!activeItem) return;
-                e.preventDefault();
+                if (e.cancelable) e.preventDefault();
 
-                currentY = e.clientY || (e.touches && e.touches[0].clientY) || initialY;
-                const deltaY = currentY - initialY;
+                const deltaY = e.clientY - initialY;
                 activeItem.style.transform = `translate3d(0, ${deltaY}px, 0)`;
 
                 const activeCenterY = itemInitialTop + deltaY + itemHeight / 2;
@@ -936,7 +949,10 @@
 
             if (items.length === 0) {
                 listEl.innerHTML = `<div class="text-center text-gray-500 text-xs py-8">✨ 尚無符合的交易紀錄</div>`;
+                return;
             }
+
+            const fragment = document.createDocumentFragment();
 
             items.forEach((item) => {
                 const isInc = item.type === 'income';
@@ -949,44 +965,40 @@
                 const accInfo = getAccountDetails(item.account);
 
                 div.innerHTML = `
-                    <div class="flex items-center gap-2.5">
-                        <div class="drag-handle p-1 -ml-1 text-gray-500 hover:text-white ${currentSortOrder === 'manual' ? 'flex' : 'hidden'} items-center justify-center cursor-grab active:cursor-grabbing select-none">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <div class="drag-handle p-1 -ml-1 text-gray-500 hover:text-white ${currentSortOrder === 'manual' ? 'flex' : 'hidden'} items-center justify-center cursor-grab active:cursor-grabbing select-none shrink-0">
                             <svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
                         </div>
                         <div class="w-8 h-8 rounded-xl flex items-center justify-center text-sm bg-gradient-to-br from-white/10 to-white/5 border border-white/15 shrink-0">
                             ${icon}
                         </div>
-                        <div>
+                        <div class="min-w-0 flex-1">
                             <div class="font-bold text-gray-100 text-xs flex items-center gap-1">
-                                ${item.category}
-                                <span class="text-[8px] px-1 py-0.2 bg-white/5 border border-white/10 rounded-full ${accInfo.color} font-semibold">${accInfo.icon} ${accInfo.name}</span>
+                                <span class="truncate">${item.category}</span>
+                                <span class="text-[8px] px-1 py-0.2 bg-white/5 border border-white/10 rounded-full ${accInfo.color} font-semibold shrink-0">${accInfo.icon} ${accInfo.name}</span>
                             </div>
-                            <div class="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1.5">
-                                <span class="text-gray-300">${item.note || '無備註'}</span>
-                                ${item.tags ? `<span class="text-blue-400 font-medium">${item.tags}</span>` : ''}
-                                <span class="text-[8px] text-gray-500">${item.date}</span>
+                            <div class="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1.5 truncate">
+                                <span class="text-gray-300 truncate">${item.note || '無備註'}</span>
+                                ${item.tags ? `<span class="text-blue-400 font-medium shrink-0">${item.tags}</span>` : ''}
+                                <span class="text-[8px] text-gray-500 shrink-0">${item.date}</span>
                             </div>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5 shrink-0 pl-1">
                         <div class="text-right">
                             <span class="font-black text-xs tracking-tight ${isInc ? 'text-emerald-400' : isTrf ? 'text-purple-400' : 'text-gray-100'}">
                                 ${isInc ? '+' : isTrf ? '⇄ ' : '-'}$${item.hkdAmount.toFixed(2)}
                             </span>
                             ${item.currency !== 'HKD' ? `<span class="block text-[8px] text-gray-500">(${item.currency} ${item.amount})</span>` : ''}
                         </div>
-                        <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 p-1 transition">✕</button>
+                        <button data-id="${item.id}" class="del-btn text-gray-500 hover:text-rose-400 p-1.5 transition text-xs">✕</button>
                     </div>
                 `;
 
-                div.querySelector('.del-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    QuantumLedger.deleteRecord(item.id);
-                    render();
-                });
-
-                listEl.appendChild(div);
+                fragment.appendChild(div);
             });
+
+            listEl.appendChild(fragment);
 
             const balance = QuantumLedger.expenses.reduce((acc, item) => item.type === 'income' ? acc + item.hkdAmount : item.type === 'expense' ? acc - item.hkdAmount : acc, 0);
             balanceContainer.textContent = (balance >= 0 ? '$' : '-$') + Math.abs(balance).toFixed(2);
