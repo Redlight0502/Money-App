@@ -19,7 +19,7 @@ function animateNumber(elementId, targetValue, duration = 600, prefix = '$', dec
     function update(currentTime) {
         const elapsed = currentTime - startTime;
         const progress = Math.min(elapsed / duration, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 3); // cubic ease-out
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
         const current = startValue + (targetValue - startValue) * easeProgress;
         
         const isNegative = current < 0;
@@ -37,6 +37,64 @@ function animateNumber(elementId, targetValue, duration = 600, prefix = '$', dec
     requestAnimationFrame(update);
 }
 
+function switchType(type) {
+    currentType = type;
+    const exp = document.getElementById('typeExpense');
+    const inc = document.getElementById('typeIncome');
+    const trf = document.getElementById('typeTransfer');
+    const catAccGrid = document.getElementById('categoryAccountGrid');
+    const trfAccGrid = document.getElementById('transferAccountGrid');
+    const submitBtn = document.getElementById('submitBtn');
+
+    exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+
+    if (type === 'transfer') {
+        catAccGrid.classList.add('hidden');
+        trfAccGrid.classList.remove('hidden');
+        trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
+        submitBtn.textContent = "確認帳戶轉帳";
+    } else {
+        catAccGrid.classList.remove('hidden');
+        trfAccGrid.classList.add('hidden');
+        updateCategories();
+        if (type === 'expense') {
+            exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+            submitBtn.textContent = "確認記錄支出";
+        }
+        if (type === 'income') {
+            inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
+            submitBtn.textContent = "確認記錄收入";
+        }
+    }
+}
+
+function switchEditType(type) {
+    editingType = type;
+    const exp = document.getElementById('editTypeExpense');
+    const inc = document.getElementById('editTypeIncome');
+    const trf = document.getElementById('editTypeTransfer');
+    const catAccGrid = document.getElementById('editCategoryAccountGrid');
+    const trfAccGrid = document.getElementById('editTransferAccountGrid');
+
+    exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+    trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
+
+    if (type === 'transfer') {
+        catAccGrid.classList.add('hidden');
+        trfAccGrid.classList.remove('hidden');
+        trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
+    } else {
+        catAccGrid.classList.remove('hidden');
+        trfAccGrid.classList.add('hidden');
+        updateEditCategories();
+        if (type === 'expense') exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+        if (type === 'income') inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
+    }
+}
+
 function openEditModal(record) {
     document.getElementById('editId').value = record.id;
     document.getElementById('editAmount').value = record.amount;
@@ -48,12 +106,13 @@ function openEditModal(record) {
     switchEditType(record.type || 'expense');
     
     if (record.type === 'transfer') {
+        document.getElementById('editFromAccount').value = record.account || 'FPS';
         document.getElementById('editToAccount').value = record.toAccount || 'Octopus';
     } else {
         updateEditCategories();
         document.getElementById('editCategory').value = record.category;
+        document.getElementById('editAccount').value = record.account;
     }
-    document.getElementById('editAccount').value = record.account;
     document.getElementById('panelEdit').classList.remove('hidden');
 }
 
@@ -61,29 +120,17 @@ function closeEditModal() {
     document.getElementById('panelEdit').classList.add('hidden');
 }
 
-function switchEditType(type) {
-    editingType = type;
-    const exp = document.getElementById('editTypeExpense');
-    const inc = document.getElementById('editTypeIncome');
-    const trf = document.getElementById('editTypeTransfer');
-    const catSelect = document.getElementById('editCategory');
-    const toAccSelect = document.getElementById('editToAccount');
-
-    exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
-    inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
-    trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
-
-    if (type === 'transfer') {
-        catSelect.classList.add('hidden');
-        toAccSelect.classList.remove('hidden');
-        trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
-    } else {
-        catSelect.classList.remove('hidden');
-        toAccSelect.classList.add('hidden');
-        updateEditCategories();
-        if (type === 'expense') exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
-        if (type === 'income') inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
-    }
+function updateCategories() {
+    const select = document.getElementById('category');
+    if (!select) return;
+    select.innerHTML = '';
+    const list = currentType === 'income' ? QuantumLedger.incomeCategories : QuantumLedger.expenseCategories;
+    list.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.name;
+        opt.textContent = `${item.icon} ${item.name}`;
+        select.appendChild(opt);
+    });
 }
 
 function updateEditCategories() {
@@ -148,14 +195,23 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        const isTransfer = editingType === 'transfer';
+        const fromAccount = isTransfer ? document.getElementById('editFromAccount').value : document.getElementById('editAccount').value;
+        const toAccount = isTransfer ? document.getElementById('editToAccount').value : null;
+
+        if (isTransfer && fromAccount === toAccount) {
+            alert('轉出與轉入帳戶不能相同！');
+            return;
+        }
+
         QuantumLedger.updateRecord({
             id: id,
             type: editingType,
             amount: amount,
             currency: document.getElementById('editCurrency').value,
-            category: editingType === 'transfer' ? '帳戶互轉' : document.getElementById('editCategory').value,
-            account: document.getElementById('editAccount').value,
-            toAccount: editingType === 'transfer' ? document.getElementById('editToAccount').value : null,
+            category: isTransfer ? '帳戶互轉' : document.getElementById('editCategory').value,
+            account: fromAccount,
+            toAccount: toAccount,
             date: document.getElementById('editDate').value,
             note: document.getElementById('editNote').value,
             tags: document.getElementById('editTags').value
@@ -215,14 +271,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const amount = parseFloat(document.getElementById('amount').value);
         if (!amount || amount <= 0) return;
 
+        const isTransfer = currentType === 'transfer';
+        const fromAccount = isTransfer ? document.getElementById('fromAccount').value : document.getElementById('account').value;
+        const toAccount = isTransfer ? document.getElementById('toAccount').value : null;
+
+        if (isTransfer && fromAccount === toAccount) {
+            alert('轉出與轉入帳戶不能相同！');
+            return;
+        }
+
         QuantumLedger.addRecord({
             id: generateUniqueId(),
             type: currentType,
             amount,
             currency: document.getElementById('currency').value,
-            category: currentType === 'transfer' ? '帳戶互轉' : document.getElementById('category').value,
-            account: document.getElementById('account').value,
-            toAccount: currentType === 'transfer' ? document.getElementById('toAccount').value : null,
+            category: isTransfer ? '帳戶互轉' : document.getElementById('category').value,
+            account: fromAccount,
+            toAccount: toAccount,
             date: document.getElementById('date').value,
             note: document.getElementById('note').value,
             tags: document.getElementById('tags').value
@@ -253,6 +318,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     initSmoothMobileDrag();
+    updateCategories();
+    document.getElementById('date').valueAsDate = new Date();
     render();
 });
 
@@ -262,7 +329,6 @@ function render() {
     const countEl = document.getElementById('recordCount');
     const stats = QuantumLedger.getMonthStats();
 
-    // Animated numbers
     animateNumber('monthIncome', stats.income);
     animateNumber('monthExpense', stats.expense);
 
@@ -369,8 +435,6 @@ function render() {
     listEl.appendChild(fragment);
 
     const balance = QuantumLedger.expenses.reduce((acc, item) => item.type === 'income' ? acc + item.hkdAmount : item.type === 'expense' ? acc - item.hkdAmount : acc, 0);
-    
-    // Animate net balance
     animateNumber(balanceContainer, balance);
     balanceContainer.className = `text-base sm:text-lg font-black tracking-tight ${balance >= 0 ? 'text-white' : 'text-rose-400'}`;
 }
