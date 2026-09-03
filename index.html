@@ -337,16 +337,38 @@
                 { name: '其他', icon: '✨', keywords: [] }
             ],
 
+            // Fix: Ensures arrays are cleaned of duplicate records based on strict ID checks
+            deduplicate(arr) {
+                if (!Array.isArray(arr)) return [];
+                const seen = new Set();
+                return arr.filter(item => {
+                    if (!item || !item.id) return true;
+                    const idStr = String(item.id);
+                    if (seen.has(idStr)) return false;
+                    seen.add(idStr);
+                    return true;
+                });
+            },
+
             init() {
                 try {
                     const cached = localStorage.getItem(STORAGE_KEY);
-                    if (cached) this.expenses = JSON.parse(cached);
+                    if (cached) {
+                        this.expenses = this.deduplicate(JSON.parse(cached));
+                    }
                     const budgetCached = localStorage.getItem(BUDGET_KEY);
                     if (budgetCached) this.monthlyBudget = parseFloat(budgetCached);
                     const debtCached = localStorage.getItem(DEBT_KEY);
-                    if (debtCached) this.debts = JSON.parse(debtCached);
+                    if (debtCached) {
+                        this.debts = this.deduplicate(JSON.parse(debtCached));
+                    }
                     const wishCached = localStorage.getItem(WISH_KEY);
-                    if (wishCached) this.wishes = JSON.parse(wishCached);
+                    if (wishCached) {
+                        this.wishes = this.deduplicate(JSON.parse(wishCached));
+                    }
+                    
+                    // Auto-save cleaned data back to storage immediately
+                    this.save();
                 } catch (e) { console.error(e); }
             },
 
@@ -370,7 +392,7 @@
             },
 
             deleteRecord(id) {
-                this.expenses = this.expenses.filter(item => item.id !== id);
+                this.expenses = this.expenses.filter(item => String(item.id) !== String(id));
                 this.save();
             },
 
@@ -542,12 +564,19 @@
                 document.body.appendChild(dl); dl.click(); dl.remove();
             });
             document.getElementById('importJsonBtn').addEventListener('click', () => importInput.click());
+            
             importInput.addEventListener('change', (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                        try { QuantumLedger.expenses = JSON.parse(ev.target.result); QuantumLedger.save(); render(); alert('備份還原成功！'); } catch(err) { alert('檔案解析失敗'); }
+                        try { 
+                            // Fix: Pass imported data through deduplicate to prevent multiplying items
+                            QuantumLedger.expenses = QuantumLedger.deduplicate(JSON.parse(ev.target.result)); 
+                            QuantumLedger.save(); 
+                            render(); 
+                            alert('備份還原成功！'); 
+                        } catch(err) { alert('檔案解析失敗'); }
                     };
                     reader.readAsText(file);
                 }
@@ -629,19 +658,17 @@
                 document.getElementById('date').valueAsDate = new Date();
             });
 
-            // Single Event Listener Delegation for Item Deletion
             document.getElementById('recordList').addEventListener('click', (e) => {
                 const delBtn = e.target.closest('.del-btn');
                 if (delBtn) {
                     e.stopPropagation();
-                    const id = parseInt(delBtn.getAttribute('data-id'));
+                    const id = delBtn.getAttribute('data-id');
                     QuantumLedger.deleteRecord(id);
                     render();
                 }
             });
         }
 
-        /* Mobile Drag Sort Engine with Touch Protection */
         function initSmoothMobileDrag() {
             const listContainer = document.getElementById('recordList');
             let activeItem = null;
@@ -734,17 +761,18 @@
             listContainer.addEventListener('pointerdown', onPointerDown);
         }
 
+        // Fix: Force String coercion across all id checks during Drag-and-Drop to block type duplication
         function saveDragOrder() {
-            const currentListIds = [...document.querySelectorAll('#recordList [data-id]')].map(el => parseInt(el.getAttribute('data-id')));
+            const currentListIds = [...document.querySelectorAll('#recordList [data-id]')].map(el => String(el.getAttribute('data-id')));
             const newExpensesOrder = [];
             
             currentListIds.forEach(id => {
-                const item = QuantumLedger.expenses.find(x => x.id === id);
+                const item = QuantumLedger.expenses.find(x => String(x.id) === id);
                 if (item) newExpensesOrder.push(item);
             });
 
             QuantumLedger.expenses.forEach(item => {
-                if (!currentListIds.includes(item.id)) {
+                if (!currentListIds.includes(String(item.id))) {
                     newExpensesOrder.push(item);
                 }
             });
@@ -826,8 +854,8 @@
                         <div class="text-[9px] text-gray-400">已還: $${d.paid} / 總額: $${d.amount}</div>
                     </div>
                     <div class="flex items-center gap-1">
-                        <button onclick="payDebt(${d.id})" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded-lg text-[9px] font-bold active:scale-95 transition">還款</button>
-                        <button onclick="delDebt(${d.id})" class="text-gray-500 hover:text-rose-400 px-1">✕</button>
+                        <button onclick="payDebt('${d.id}')" class="px-2 py-1 bg-amber-500/20 text-amber-300 rounded-lg text-[9px] font-bold active:scale-95 transition">還款</button>
+                        <button onclick="delDebt('${d.id}')" class="text-gray-500 hover:text-rose-400 px-1">✕</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -835,7 +863,7 @@
         }
 
         window.payDebt = function(id) {
-            const debt = QuantumLedger.debts.find(d => d.id === id);
+            const debt = QuantumLedger.debts.find(d => String(d.id) === String(id));
             if (debt) {
                 const amt = parseFloat(prompt(`輸入還款金額 (剩餘 $${debt.amount - debt.paid}):`, '100'));
                 if (amt && !isNaN(amt)) {
@@ -847,7 +875,7 @@
         };
 
         window.delDebt = function(id) {
-            QuantumLedger.debts = QuantumLedger.debts.filter(d => d.id !== id);
+            QuantumLedger.debts = QuantumLedger.debts.filter(d => String(d.id) !== String(id));
             QuantumLedger.save();
             renderDebtList();
         };
@@ -872,8 +900,8 @@
                         <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full" style="width: ${pct}%"></div>
                     </div>
                     <div class="flex justify-end gap-1 pt-0.5">
-                        <button onclick="depositWish(${w.id})" class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-lg text-[9px] font-bold active:scale-95 transition">存錢</button>
-                        <button onclick="delWish(${w.id})" class="text-gray-500 hover:text-rose-400 px-1 text-[9px]">刪除</button>
+                        <button onclick="depositWish('${w.id}')" class="px-2 py-0.5 bg-purple-500/20 text-purple-300 rounded-lg text-[9px] font-bold active:scale-95 transition">存錢</button>
+                        <button onclick="delWish('${w.id}')" class="text-gray-500 hover:text-rose-400 px-1 text-[9px]">刪除</button>
                     </div>
                 `;
                 container.appendChild(div);
@@ -881,7 +909,7 @@
         }
 
         window.depositWish = function(id) {
-            const wish = QuantumLedger.wishes.find(w => w.id === id);
+            const wish = QuantumLedger.wishes.find(w => String(w.id) === String(id));
             if (wish) {
                 const amt = parseFloat(prompt(`存入金額至「${wish.title}」:`, '200'));
                 if (amt && !isNaN(amt)) {
@@ -893,7 +921,7 @@
         };
 
         window.delWish = function(id) {
-            QuantumLedger.wishes = QuantumLedger.wishes.filter(w => w.id !== id);
+            QuantumLedger.wishes = QuantumLedger.wishes.filter(w => String(w.id) !== String(id));
             QuantumLedger.save();
             renderWishList();
         };
