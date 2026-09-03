@@ -1,9 +1,9 @@
-const STORAGE_KEY = 'obsidian_quantum_data_v4';
-const BUDGET_KEY = 'obsidian_quantum_budget_v4';
-const DEBT_KEY = 'obsidian_quantum_debt_v4';
-const WISH_KEY = 'obsidian_quantum_wish_v4';
-const SUB_KEY = 'obsidian_quantum_sub_v4';
-const THEME_KEY = 'obsidian_quantum_theme_v4';
+const STORAGE_KEY = 'obsidian_quantum_data_v5';
+const BUDGET_KEY = 'obsidian_quantum_budget_v5';
+const DEBT_KEY = 'obsidian_quantum_debt_v5';
+const WISH_KEY = 'obsidian_quantum_wish_v5';
+const SUB_KEY = 'obsidian_quantum_sub_v5';
+const THEME_KEY = 'obsidian_quantum_theme_v5';
 
 const EXCHANGE_RATES = { HKD: 1.0, RMB: 1.1, USD: 7.8, JPY: 0.052, TWD: 0.25 };
 
@@ -160,6 +160,7 @@ function quickLog(category, amount, note, account = 'Octopus') {
         currency: 'HKD',
         category,
         account,
+        toAccount: null,
         date: new Date().toISOString().slice(0, 10),
         note,
         tags: ''
@@ -172,7 +173,9 @@ function parseAiText(text) {
     if (!text) return null;
 
     let type = 'expense';
-    if (text.includes('收') || text.includes('人工') || text.includes('薪金') || text.includes('收入') || text.includes('紅包')) {
+    if (text.includes('轉到') || text.includes('轉去') || text.includes('轉入') || text.includes('充值') || text.includes('互轉')) {
+        type = 'transfer';
+    } else if (text.includes('收') || text.includes('人工') || text.includes('薪金') || text.includes('收入') || text.includes('紅包')) {
         type = 'income';
     }
 
@@ -188,37 +191,52 @@ function parseAiText(text) {
     if (!amount || isNaN(amount)) return null;
 
     let account = 'Alipay';
-    if (text.includes('現金') || text.includes('現')) account = 'Cash';
-    else if (text.includes('八達通')) account = 'Octopus';
-    else if (text.includes('微信') || text.includes('wechat')) account = 'WeChat';
-    else if (text.includes('fps') || text.includes('轉數快')) account = 'FPS';
-    else if (text.includes('信用卡') || text.includes('card')) account = 'CreditCard';
+    let toAccount = 'Octopus';
+
+    if (type === 'transfer') {
+        if (text.includes('從八達通') || text.includes('八達通轉')) account = 'Octopus';
+        else if (text.includes('從現金') || text.includes('現金轉')) account = 'Cash';
+        else if (text.includes('從轉數快') || text.includes('轉數快轉')) account = 'FPS';
+        else if (text.includes('從微信') || text.includes('微信轉')) account = 'WeChat';
+
+        if (text.includes('到支付寶') || text.includes('去支付寶')) toAccount = 'Alipay';
+        else if (text.includes('到八達通') || text.includes('去八達通')) toAccount = 'Octopus';
+        else if (text.includes('到微信') || text.includes('去微信')) toAccount = 'WeChat';
+        else if (text.includes('到現金') || text.includes('去現金')) toAccount = 'Cash';
+    } else {
+        if (text.includes('現金') || text.includes('現')) account = 'Cash';
+        else if (text.includes('八達通')) account = 'Octopus';
+        else if (text.includes('微信') || text.includes('wechat')) account = 'WeChat';
+        else if (text.includes('fps') || text.includes('轉數快')) account = 'FPS';
+        else if (text.includes('信用卡') || text.includes('card')) account = 'CreditCard';
+    }
 
     let tags = '';
     const tagMatch = text.match(/#\S+/g);
     if (tagMatch) tags = tagMatch.join(' ');
 
-    let category = type === 'expense' ? '餐費' : '薪金';
-    const categoriesList = type === 'expense' ? QuantumLedger.expenseCategories : QuantumLedger.incomeCategories;
-    
-    let matchedCategory = null;
-    for (let cat of categoriesList) {
-        for (let kw of cat.keywords) {
-            if (text.toLowerCase().includes(kw.toLowerCase())) {
-                matchedCategory = cat.name;
-                break;
+    let category = type === 'expense' ? '餐費' : type === 'income' ? '薪金' : '帳戶互轉';
+    if (type !== 'transfer') {
+        const categoriesList = type === 'expense' ? QuantumLedger.expenseCategories : QuantumLedger.incomeCategories;
+        let matchedCategory = null;
+        for (let cat of categoriesList) {
+            for (let kw of cat.keywords) {
+                if (text.toLowerCase().includes(kw.toLowerCase())) {
+                    matchedCategory = cat.name;
+                    break;
+                }
             }
+            if (matchedCategory) break;
         }
-        if (matchedCategory) break;
+        if (matchedCategory) category = matchedCategory;
     }
-    if (matchedCategory) category = matchedCategory;
 
     let dateObj = new Date();
     if (text.includes('昨天')) dateObj.setDate(dateObj.getDate() - 1);
     else if (text.includes('前天')) dateObj.setDate(dateObj.getDate() - 2);
     const dateStr = dateObj.toISOString().slice(0, 10);
 
-    let note = text.replace(/(?:\$|HK\$)?\s*\d+(\.\d+)?/g, '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|支付寶|微信|八達通|fps|收|買)/g, '').trim();
+    let note = text.replace(/(?:\$|HK\$)?\s*\d+(\.\d+)?/g, '').replace(/#\S+/g, '').replace(/(昨天|今天|前天|現金|支付寶|微信|八達通|fps|收|買|轉到|轉去|從)/g, '').trim();
     if (!note) note = category;
 
     return {
@@ -228,6 +246,7 @@ function parseAiText(text) {
         currency: text.toLowerCase().includes('rmb') || text.includes('人民幣') ? 'RMB' : 'HKD',
         category,
         account,
+        toAccount: type === 'transfer' ? toAccount : null,
         date: dateStr,
         note,
         tags
@@ -239,12 +258,15 @@ function openEditModal(record) {
     document.getElementById('editAmount').value = record.amount;
     document.getElementById('editCurrency').value = record.currency || 'HKD';
     document.getElementById('editAccount').value = record.account || 'Alipay';
+    document.getElementById('editToAccount').value = record.toAccount || 'Octopus';
     document.getElementById('editDate').value = record.date || new Date().toISOString().slice(0, 10);
     document.getElementById('editNote').value = record.note || '';
     document.getElementById('editTags').value = record.tags || '';
 
     switchEditType(record.type || 'expense');
-    document.getElementById('editCategory').value = record.category;
+    if (record.type !== 'transfer') {
+        document.getElementById('editCategory').value = record.category;
+    }
 
     document.getElementById('panelEdit').classList.remove('hidden');
 }
@@ -258,6 +280,8 @@ function switchEditType(type) {
     const exp = document.getElementById('editTypeExpense');
     const inc = document.getElementById('editTypeIncome');
     const trf = document.getElementById('editTypeTransfer');
+    const editCat = document.getElementById('editCategory');
+    const editToAcc = document.getElementById('editToAccount');
     
     updateEditCategories();
 
@@ -265,12 +289,15 @@ function switchEditType(type) {
     inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
     trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
 
-    if (type === 'expense') {
-        exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
-    } else if (type === 'income') {
-        inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
-    } else {
+    if (type === 'transfer') {
+        editCat.classList.add('hidden');
+        editToAcc.classList.remove('hidden');
         trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
+    } else {
+        editCat.classList.remove('hidden');
+        editToAcc.classList.add('hidden');
+        if (type === 'expense') exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+        else if (type === 'income') inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
     }
 }
 
@@ -335,8 +362,9 @@ function setupEvents() {
             type: editingType,
             amount: amount,
             currency: document.getElementById('editCurrency').value,
-            category: document.getElementById('editCategory').value,
+            category: editingType === 'transfer' ? '帳戶互轉' : document.getElementById('editCategory').value,
             account: document.getElementById('editAccount').value,
+            toAccount: editingType === 'transfer' ? document.getElementById('editToAccount').value : null,
             date: document.getElementById('editDate').value,
             note: document.getElementById('editNote').value,
             tags: document.getElementById('editTags').value
@@ -380,8 +408,8 @@ function setupEvents() {
         document.body.appendChild(dl); dl.click(); dl.remove();
     });
     document.getElementById('exportCsvBtn').addEventListener('click', () => {
-        let csv = "data:text/csv;charset=utf-8,ID,Type,Category,Account,Amount,Currency,Date,Note,Tags\r\n";
-        QuantumLedger.expenses.forEach(i => { csv += [i.id, i.type, `"${i.category}"`, i.account, i.amount, i.currency, i.date, `"${i.note}"`, `"${i.tags}"`].join(",") + "\r\n"; });
+        let csv = "data:text/csv;charset=utf-8,ID,Type,Category,FromAccount,ToAccount,Amount,Currency,Date,Note,Tags\r\n";
+        QuantumLedger.expenses.forEach(i => { csv += [i.id, i.type, `"${i.category}"`, i.account, i.toAccount || '', i.amount, i.currency, i.date, `"${i.note}"`, `"${i.tags}"`].join(",") + "\r\n"; });
         const dl = document.createElement('a'); dl.setAttribute("href", encodeURI(csv)); dl.setAttribute("download", `obsidian_quantum_${new Date().toISOString().slice(0,10)}.csv`);
         document.body.appendChild(dl); dl.click(); dl.remove();
     });
@@ -409,7 +437,7 @@ function setupEvents() {
     });
 
     document.getElementById('helpNlpBtn').addEventListener('click', () => {
-        alert('🪄 AI 語意手冊：\n可直接輸入：\n- "$38 買Starbucks咖啡 支付寶 #下午茶"\n- "昨天搭地鐵14.5 八達通"\n- "收到薪金 18000 轉數快"');
+        alert('🪄 AI 語意手冊：\n可直接輸入：\n- "$38 買Starbucks咖啡 支付寶 #下午茶"\n- "從轉數快轉500到八達通"\n- "收到薪金 18000 轉數快"');
     });
 
     document.getElementById('clearDataBtn').addEventListener('click', () => {
@@ -476,8 +504,9 @@ function setupEvents() {
             type: currentType,
             amount,
             currency: document.getElementById('currency').value,
-            category: document.getElementById('category').value,
+            category: currentType === 'transfer' ? '帳戶互轉' : document.getElementById('category').value,
             account: document.getElementById('account').value,
+            toAccount: currentType === 'transfer' ? document.getElementById('toAccount').value : null,
             date: document.getElementById('date').value,
             note: document.getElementById('note').value,
             tags: document.getElementById('tags').value
@@ -625,24 +654,33 @@ function switchType(type) {
     const inc = document.getElementById('typeIncome');
     const trf = document.getElementById('typeTransfer');
     const submit = document.getElementById('submitBtn');
+    const catSelect = document.getElementById('category');
+    const toAccSelect = document.getElementById('toAccount');
+    
     updateCategories();
 
     exp.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
     inc.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
     trf.className = "flex-1 py-1 rounded-lg text-gray-400 font-medium text-[11px]";
 
-    if (type === 'expense') {
-        exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
-        submit.className = "w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
-        submit.textContent = "確認記錄支出";
-    } else if (type === 'income') {
-        inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
-        submit.className = "w-full py-2 bg-gradient-to-r from-emerald-400 to-emerald-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
-        submit.textContent = "確認記錄收入";
-    } else {
+    if (type === 'transfer') {
+        catSelect.classList.add('hidden');
+        toAccSelect.classList.remove('hidden');
         trf.className = "flex-1 py-1 rounded-lg bg-purple-600 text-white font-bold text-[11px]";
         submit.className = "w-full py-2 bg-gradient-to-r from-purple-500 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
         submit.textContent = "確認帳戶互轉";
+    } else {
+        catSelect.classList.remove('hidden');
+        toAccSelect.classList.add('hidden');
+        if (type === 'expense') {
+            exp.className = "flex-1 py-1 rounded-lg bg-white/10 text-white font-bold text-[11px]";
+            submit.className = "w-full py-2 bg-gradient-to-r from-blue-600 to-indigo-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
+            submit.textContent = "確認記錄支出";
+        } else if (type === 'income') {
+            inc.className = "flex-1 py-1 rounded-lg bg-emerald-500 text-white font-bold text-[11px]";
+            submit.className = "w-full py-2 bg-gradient-to-r from-emerald-400 to-emerald-600 active:scale-[0.98] text-white font-bold rounded-xl text-xs shadow-md transition";
+            submit.textContent = "確認記錄收入";
+        }
     }
 }
 
@@ -683,9 +721,7 @@ function renderSubList() {
         container.innerHTML = '<div class="text-center text-gray-500 text-[10px] py-2">尚無定期訂閱項目</div>';
         return;
     }
-    let totalSub = 0;
     QuantumLedger.subscriptions.forEach(s => {
-        totalSub += s.amount;
         const div = document.createElement('div');
         div.className = "flex items-center justify-between p-2 bg-white/5 border border-white/10 rounded-xl text-xs";
         div.innerHTML = `
@@ -811,7 +847,7 @@ function render() {
     let items = [...QuantumLedger.expenses];
 
     if (currentAccountFilter !== 'ALL') {
-        items = items.filter(i => i.account === currentAccountFilter);
+        items = items.filter(i => i.account === currentAccountFilter || i.toAccount === currentAccountFilter);
     }
 
     if (searchQuery) {
@@ -856,8 +892,16 @@ function render() {
         div.setAttribute('data-id', item.id);
         div.className = "record-item flex items-center justify-between p-2.5 bg-white/[0.04] active:bg-white/[0.08] border border-white/[0.07] rounded-xl transition-shadow shadow-sm";
 
-        const icon = getCategoryIcon(item.category);
-        const accInfo = getAccountDetails(item.account);
+        const icon = isTrf ? '⇄' : getCategoryIcon(item.category);
+        const accFromInfo = getAccountDetails(item.account);
+        const accToInfo = item.toAccount ? getAccountDetails(item.toAccount) : null;
+
+        let accountBadgeHTML = '';
+        if (isTrf && accToInfo) {
+            accountBadgeHTML = `<span class="text-[8px] px-1.5 py-0.2 bg-purple-500/10 border border-purple-500/20 rounded-full text-purple-300 font-bold shrink-0">${accFromInfo.icon} ${accFromInfo.name} ➔ ${accToInfo.icon} ${accToInfo.name}</span>`;
+        } else {
+            accountBadgeHTML = `<span class="text-[8px] px-1 py-0.2 bg-white/5 border border-white/10 rounded-full ${accFromInfo.color} font-semibold shrink-0">${accFromInfo.icon} ${accFromInfo.name}</span>`;
+        }
 
         div.innerHTML = `
             <div class="flex items-center gap-2 overflow-hidden">
@@ -869,8 +913,8 @@ function render() {
                 </div>
                 <div class="min-w-0 flex-1">
                     <div class="font-bold text-gray-100 text-xs flex items-center gap-1">
-                        <span class="truncate">${item.category}</span>
-                        <span class="text-[8px] px-1 py-0.2 bg-white/5 border border-white/10 rounded-full ${accInfo.color} font-semibold shrink-0">${accInfo.icon} ${accInfo.name}</span>
+                        <span class="truncate">${isTrf ? '帳戶互轉' : item.category}</span>
+                        ${accountBadgeHTML}
                     </div>
                     <div class="text-[9px] text-gray-400 mt-0.5 flex items-center gap-1.5 truncate">
                         <span class="text-gray-300 truncate">${item.note || '無備註'}</span>
