@@ -41,7 +41,9 @@
                     <option value="TWD">🇹🇼 TWD</option>
                 </select>
             </div>
-            <div class="grid grid-cols-3 gap-1.5">
+
+            <!-- Expense / Income Account Grid -->
+            <div id="editCategoryAccountGrid" class="grid grid-cols-2 gap-1.5">
                 <select id="editCategory" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none"></select>
                 <select id="editAccount" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
                     <option value="Alipay">💙 支付寶</option>
@@ -51,16 +53,32 @@
                     <option value="Octopus">🚇 八達通</option>
                     <option value="CreditCard">💳 信用卡</option>
                 </select>
-                <select id="editToAccount" class="hidden px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-purple-300 focus:outline-none">
-                    <option value="Alipay">➡️ 轉至: 支付寶</option>
-                    <option value="WeChat">➡️ 轉至: 微信支付</option>
-                    <option value="FPS">➡️ 轉至: 轉數快</option>
-                    <option value="Cash">➡️ 轉至: 現金</option>
-                    <option value="Octopus">➡️ 轉至: 八達通</option>
-                    <option value="CreditCard">➡️ 轉至: 信用卡</option>
-                </select>
-                <input type="date" id="editDate" required class="px-1.5 py-1.5 input-quantum rounded-xl text-[10px] font-bold text-gray-200 focus:outline-none">
             </div>
+
+            <!-- Transfer Account Grid (From Account -> To Account) -->
+            <div id="editTransferAccountGrid" class="grid grid-cols-2 gap-1.5 hidden">
+                <select id="editFromAccount" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-blue-300 focus:outline-none">
+                    <option value="FPS">⚡ 轉出: 轉數快</option>
+                    <option value="Alipay">💙 轉出: 支付寶</option>
+                    <option value="WeChat">💚 轉出: 微信支付</option>
+                    <option value="Cash">💵 轉出: 現金</option>
+                    <option value="Octopus">🚇 轉出: 八達通</option>
+                    <option value="CreditCard">💳 轉出: 信用卡</option>
+                </select>
+                <select id="editToAccount" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-purple-300 focus:outline-none">
+                    <option value="Octopus">➡️ 轉入: 八達通</option>
+                    <option value="Alipay">➡️ 轉入: 支付寶</option>
+                    <option value="WeChat">➡️ 轉入: 微信支付</option>
+                    <option value="FPS">➡️ 轉入: 轉數快</option>
+                    <option value="Cash">➡️ 轉入: 現金</option>
+                    <option value="CreditCard">💳 轉入: 信用卡</option>
+                </select>
+            </div>
+
+            <div class="grid grid-cols-1 gap-1.5">
+                <input type="date" id="editDate" required class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
+            </div>
+
             <div class="grid grid-cols-2 gap-1.5">
                 <input type="text" id="editNote" placeholder="備註" class="px-2 py-1.5 input-quantum rounded-xl text-xs text-gray-200 focus:outline-none">
                 <input type="text" id="editTags" placeholder="標籤 (例: #旅遊)" class="px-2 py-1.5 input-quantum rounded-xl text-xs text-blue-300 focus:outline-none">
@@ -97,7 +115,7 @@
                 </div>
             </div>
 
-            <!-- Overlay Panels -->
+            <!-- Config, Charts, Sub, Debt, Wish Panels -->
             <div id="panelConfig" class="hidden mb-2 p-3 bg-[#121216]/95 border border-white/20 rounded-[20px] space-y-2 z-40 shadow-2xl backdrop-blur-3xl">
                 <div class="text-[10px] font-bold text-gray-400 uppercase tracking-widest flex justify-between items-center">
                     <span>Data Center & UI Theme</span>
@@ -239,7 +257,8 @@
                         <button type="button" data-action="+500" class="calc-btn py-1 bg-emerald-500/10 border border-emerald-500/20 active:bg-emerald-500/30 rounded-lg text-[9px] font-bold text-emerald-400">+500</button>
                     </div>
 
-                    <div class="grid grid-cols-3 gap-1.5">
+                    <!-- Expense / Income Category and Account Grid -->
+                    <div id="categoryAccountGrid" class="grid grid-cols-2 gap-1.5">
                         <select id="category" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none"></select>
                         <select id="account" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
                             <option value="Alipay">💙 支付寶</option>
@@ -249,15 +268,30 @@
                             <option value="Octopus">🚇 八達通</option>
                             <option value="CreditCard">💳 信用卡</option>
                         </select>
-                        <select id="toAccount" class="hidden px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-purple-300 focus:outline-none">
-                            <option value="Octopus">➡️ 轉至: 八達通</option>
-                            <option value="Alipay">➡️ 轉至: 支付寶</option>
-                            <option value="WeChat">➡️ 轉至: 微信支付</option>
-                            <option value="FPS">➡️ 轉至: 轉數快</option>
-                            <option value="Cash">➡️ 轉至: 現金</option>
-                            <option value="CreditCard">➡️ 轉至: 信用卡</option>
+                    </div>
+
+                    <!-- Transfer Account Grid (From Account -> To Account) -->
+                    <div id="transferAccountGrid" class="grid grid-cols-2 gap-1.5 hidden">
+                        <select id="fromAccount" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-blue-300 focus:outline-none">
+                            <option value="FPS">⚡ 轉出: 轉數快</option>
+                            <option value="Alipay">💙 轉出: 支付寶</option>
+                            <option value="WeChat">💚 轉出: 微信支付</option>
+                            <option value="Cash">💵 轉出: 現金</option>
+                            <option value="Octopus">🚇 轉出: 八達通</option>
+                            <option value="CreditCard">💳 轉出: 信用卡</option>
                         </select>
-                        <input type="date" id="date" required class="px-1.5 py-1.5 input-quantum rounded-xl text-[10px] font-bold text-gray-200 focus:outline-none">
+                        <select id="toAccount" class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-purple-300 focus:outline-none">
+                            <option value="Octopus">➡️ 轉入: 八達通</option>
+                            <option value="Alipay">➡️ 轉入: 支付寶</option>
+                            <option value="WeChat">➡️ 轉入: 微信支付</option>
+                            <option value="FPS">➡️ 轉入: 轉數快</option>
+                            <option value="Cash">➡️ 轉入: 現金</option>
+                            <option value="CreditCard">💳 轉入: 信用卡</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-1.5">
+                        <input type="date" id="date" required class="px-2 py-1.5 input-quantum rounded-xl text-xs font-bold text-gray-200 focus:outline-none">
                     </div>
 
                     <div class="grid grid-cols-2 gap-1.5">
@@ -272,7 +306,7 @@
             </form>
         </div>
 
-        <!-- Records List Container (Maximized height) -->
+        <!-- Records List Container -->
         <div class="flex-1 overflow-hidden flex flex-col min-h-0">
             <div class="flex items-center justify-between gap-1 mb-1 px-0.5 flex-shrink-0">
                 <div class="flex items-center gap-1">
